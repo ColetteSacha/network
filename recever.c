@@ -1,3 +1,5 @@
+
+
 /*
 Renvoie 1 si le paquet renvoi doit être renvoyé. Renvoie 0 si le paquet doit être ignoré.
 data est le char* recu du réseau et non décodé. Renvoi est le paquet de réponse à data. recu
