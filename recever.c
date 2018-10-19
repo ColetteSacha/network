@@ -10,14 +10,14 @@ si la fonction renvoie 1, le paquet recu est valide et doit être lu.
 
 
 
-int reponse (pkt_t* recu, pkt_t *renvoi, pkt_t *recu, uint8_t window, uint32_t timestamp){
+pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, pkt_t *recu, uint8_t window, uint32_t timestamp){
 	int res = 1;
 
 	if(pkt_get_type(recu) != PTYPE_DATA){
-		return 0;
+		return E_TR;
 	}
 	if(pkt_get_tr(recu) != 0){
-		return 0;
+		return E_TR
 	}
 
 	pkt_status_code statEnvoi = PKT_OK;
@@ -31,16 +31,17 @@ int reponse (pkt_t* recu, pkt_t *renvoi, pkt_t *recu, uint8_t window, uint32_t t
 	if(statRecu != PKT_OK){// renvoi un nack
 		pkt_set_type(renvoi, PTYPE_NACK);
 		sequnum = pkt_get_sequnum(recu);
-		if(sequnum >512 11 sequnum<0){//seqnum n'est pas acceptable -> ignoré
-			return 0;
+		if(sequnum >512 || 11 sequnum<0){//seqnum n'est pas acceptable -> ignoré
+			return E_SEQNUM;
 		}
 		pkt_set_sequnum(renvoi, sequnum);
-		return 1;
+		return PKT_OK;
 	}
 
 	if(statRecu == PKT_OK){
 		pkt_get_type(renvoi, PTYPE_ACK);
 		sequnum = (pkt_get_sequnum(recu)+1)%2;
 		pkt_set_sequnum(renvoi, sequnum);
+		return PKT_OK;
 	}
 }

@@ -62,10 +62,11 @@ pkt_status_code read_write_loop(int sfd, pkt* renvoi) {
                 return stat;
             }
             int rep;
-            rep = reponse(recu, renvoi, 31, 0)// taille max du window, timestamp à voir ??
-            if(rep == 0){ // le paquet doit être ignoré
-                return 
+            stat = reponse(recu, renvoi, 31, 0)// taille max du window, timestamp à voir ??
+            if(stat != PKT_OK){ // le paquet doit être ignoré
+                return stat;
             }
+            return PKT_OK;
         }
     }
 }
