@@ -10,21 +10,14 @@ si la fonction renvoie 1, le paquet recu est valide et doit être lu.
 
 
 
-int reponse (const char* data, pkt_t *renvoi, pkt_t *recu, uint8_t window, uint32_t timestamp){
+int reponse (pkt_t* recu, pkt_t *renvoi, pkt_t *recu, uint8_t window, uint32_t timestamp){
 	int res = 1;
-	//pkt_t* recu = pkt_new(); il faut faire cette ligne en dehors de la fonction
-	pkt_status_code statRecu = pkt_decode(data, XXXXXXXX, recu);
 
-	if(pkt_get_type != PTYPE_DATA){
+	if(pkt_get_type(recu) != PTYPE_DATA){
 		return 0;
 	}
-	if(pkt_get_tr != 0){
-		if(pkt_get_tr == 1){
-			statRecu = E_TR;
-		}
-		else{
-			return 0;
-		}
+	if(pkt_get_tr(recu) != 0){
+		return 0;
 	}
 
 	pkt_status_code statEnvoi = PKT_OK;

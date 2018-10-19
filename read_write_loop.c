@@ -20,76 +20,52 @@
    * @sfd: The socket file descriptor. It is both bound and connected.
    * @return: as soon as stdin signals EOF
    */
-void read_write_loop(int sfd) {
+
+/*
+modification : lit sur le socket et renvoie des ack et nack 
+*/
+            
+            pkt_t* renvoi = pkt_new();
+
+            
+pkt_status_code read_write_loop(int sfd, pkt* renvoi) {
     int ret=-1;
     int totalLengthr=0;
     int totalLengthwSfd=0;
     int totalLengthw=0;
-    char reader[1024];
-    char writer[1024];
-    memset(reader,0,1024);
-    memset(writer,0,1024);
+    char reader[528];
+    memset(reader,0,528);
     while(1)
     {
-        struct pollfd fds[2];
-
-        fds[0].fd=0;
-        fds[0].events=POLLIN;
-        fds[1].fd = sfd;
-        fds[1].events = POLLIN;
-        ret = poll(fds, 2, -1 );
+        struct pollfd fds;
+        fds.fd = sfd;
+        fds.events = POLLIN;
+        ret = poll(fds, 1, -1 );
         if (ret<0) {
             fprintf(stderr,"select error\n");
             fprintf(stderr,"ERROR: %s\n", strerror(errno));
             return;
         }
-        if (fds[0].revents & POLLIN)
-        {
-            int length=read(0,reader,1024);   
-            if(length==0)
-            {
-                //printf("Fin du programme!\n");
-                return;
-            }  
-            totalLengthr+=length;
-            //fprintf(stderr, "read from stdin length = %d\n", length);
-            //fprintf(stderr, "total length read from stdin: %d\n",totalLengthr);
-            if(write(sfd,reader,length)!=length)
-            {
-                fprintf(stderr,"ERROR: %s\n", strerror(errno));
-                fprintf(stderr,"Erreur write sfd\n");
-                return;
-            }
-            totalLengthwSfd+=length;
-            //fprintf(stderr, "write on sfd length = %d\n", length);
-            //fprintf(stderr, "total length write on sfd: %d\n",totalLengthwSfd);
-            memset(reader,0,1024);
-            length=0;
-        }
 
-        if (fds[1].revents & POLLIN){
-            int length=read(sfd, writer, 1024);
-            if(length<0)
+        if (fds.revents & POLLIN){
+            int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512) + header(16)
+            if(length<12)//la taille est plus petite que le header
             {
                 fprintf(stderr,"ERROR: %s\n", strerror(errno));
                 fprintf(stderr,"Erreur read socket\n");
                 return;
             }
-            totalLengthw+=length;
-            if(length==0)
-            {
-                //fprintf(stderr,"Fin du programme");
-                return;
+
+            pkt_t* recu = pkt_new();
+            pkt_status_code stat = pkt_decode(reader, length, recu);
+            if(stat != PKT_OK){
+                return stat;
             }
-            if(write(1,writer,length)!=length)
-            {
-                fprintf(stderr,"ERROR: %s\n", strerror(errno));
-                fprintf(stderr, "Erreur write stdout\n");
-                return;
+            int rep;
+            rep = reponse(recu, renvoi, 31, 0)// taille max du window, timestamp à voir ??
+            if(rep == 0){ // le paquet doit être ignoré
+                return 
             }
-            //fprintf(stderr, "write on stdout length = %d\n",length);
-            //fprintf(stderr, "total length written on stdout: %d\n",totalLengthw);
-            memset(writer,0,1024);                
         }
     }
 }
