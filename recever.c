@@ -113,6 +113,11 @@ pkt_status_code read_write_loop(int sfd, int fd) {
                 return stat;
             }
 
+            //envoyer le packet sur le socket
+            char* renvoiChar[12];
+            stat = encode(renvoi, renvoiChar, 12); // erreur dans encode ??
+            write(sfd, renvoiChar, 12);
+
             int w = write(fd, recu->payload, recu->length);
             if(w != -1){ 
                 fprintf(stderr, "erreur dans l'écriture du recever \n");
