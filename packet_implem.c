@@ -400,7 +400,7 @@ pkt_status_code create_packet(char* payload, int length,uint8_t window, uint8_t 
 	if(stat != PKT_OK){
 		return stat;
 	}
-	stat = pkt_set_seqnum(paquet, seqNum); // gérer les erreur dans le sequnum ??
+	stat = pkt_set_seqnum(paquet, sequNum); // gérer les erreur dans le sequnum ??
 	stat = pkt_set_length(paquet, length);
 	if(stat != PKT_OK){
 		return stat;
