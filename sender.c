@@ -137,6 +137,9 @@ void read_write_loop(int sfd,int fdEntree) {
                   return;
                 }
                 numeroDeSequence++;
+                if(numeroDeSequence==256){
+                  numeroDeSequence=0;
+                }
 
 
                 char charAEnvoyer[528];
@@ -217,16 +220,18 @@ void read_write_loop(int sfd,int fdEntree) {
                 }
                 else{//grace aux acquis cumulatifs, on sait que tous les paquets ont bien été recu
 // jusqu'au numéro de séquence recu
-                    int nbrAdecaler=paquetDecode->seqnum-wmin;
-                    for(int i=0;i<nbrAdecaler;i++){
+                    int* nbrAdecaler=malloc(sizeof(int));
+                    pkt_status_code codeDeRetour=difference(wmin,wmax,paquetDecode->seqnum,nbrAdecaler)
+                    for(int i=0;i<*nbrAdecaler;i++){
 
 
                       pkt_del(node_get_data(current));
                       current=current->next;
                     }
-                    wmin=wmin+nbrAdecaler;//déplace la fenetre
-                    wmax=wmax+nbrAdecaler;
+                    wmin=wmin+*nbrAdecaler;//déplace la fenetre
+                    wmax=wmax+*nbrAdecaler;
                     pkt_del(paquetDecode);
+                    free(nbrAdecaler);
                 }
               }//fin du else qui regarde si le numéro de seq est celui attendu
             }//fin du else qui regarde si le le paquet est de type ack

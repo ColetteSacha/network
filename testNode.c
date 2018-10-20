@@ -7,6 +7,13 @@
 
 
 int main(int argc, char *argv[]){
+int *decalage=malloc(sizeof(int ));
+difference(5,10,10,decalage);
+printf("%d\n", *decalage);
+
+
+return 1;
+  /*
  node_t*first=create_empty_list(3);
  pkt_t*premierPack=pkt_new();
  pkt_set_length(premierPack,1);
@@ -23,6 +30,8 @@ int main(int argc, char *argv[]){
  first=find_node(first,37,35);
  pkt_t* atest=node_get_data(first);
  printf("%d\n", pkt_get_length(atest));
+
+ */
 
 
  /*

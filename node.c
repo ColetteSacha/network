@@ -101,20 +101,20 @@ node_t* find_node(node_t* current,int place, int wmin){
 pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage){
 
   if(seqnumDebut%256<seqnumFin%256){
-        if(!(seqnum>seqnumDebut && seqnum<seqnumFin)){// le sequnum n'est est dans les limites acceptables
+        if(!(seqnum>seqnumDebut && seqnum<=seqnumFin)){// le sequnum n'est est dans les limites acceptables
             return E_SEQNUM;
         }
-        decalage = (seqnum%256) - (seqnumDebut%256);
+        *decalage = (seqnum%256) - (seqnumDebut%256);
     }
     if(seqnumDebut%256>seqnumFin%256){
         if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
             return E_SEQNUM;
         }
         if((seqnum%256)>(seqnumDebut%256)){
-            decalage = (seqnum%256)-(seqnumDebut%256);
+            *decalage = (seqnum%256)-(seqnumDebut%256);
         }
         else{
-            decalage = (seqnum%256) + (256 - (seqnumDebut%256));
+            *decalage = (seqnum%256) + (255 - (seqnumDebut%256));
         }
     }
     return PKT_OK;

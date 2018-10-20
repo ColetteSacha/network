@@ -150,9 +150,9 @@ pkt_status_code pkt_decode(const char *data, const size_t len, pkt_t *pkt){
 
 pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
 {
-    
+
     uint16_t length=pkt_get_length(pkt);
-    
+
     length=htons(length);
     memcpy(buf,pkt,2);
     memcpy(buf+2,&length,2);
@@ -170,7 +170,7 @@ pkt_status_code pkt_encode(const pkt_t* pkt, char *buf, size_t *len)
     }
 
     memcpy(buf+12,pkt_get_payload(pkt),length);
-  
+
 
     uint32_t crcsecond=crc32(0,(const Bytef *) pkt_get_payload(pkt), length);
     crcsecond=htonl(crcsecond);
@@ -391,6 +391,7 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
 
 /*
 crée un packet. Ne calcule pas les crc1 et crc2, ils sont calculé dans encode
+length:taille du payload
 */
 pkt_status_code create_packet(char* payload, int length,uint8_t window, uint8_t sequNum,uint32_t timestamp, pkt_t* paquet){
 	pkt_status_code stat;
