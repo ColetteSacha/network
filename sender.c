@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -111,15 +110,3 @@ void read_write_loop(int sfd) {
         }
     }
 }
-=======
-
-
-
-
-
->>>>>>> 29f380014d43c9327d438e0c4ac76946f46f8a5d
-
-
-
-
-
