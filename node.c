@@ -53,6 +53,17 @@ node_t* node_get_next(node_t *node){
   return node->next;
 }
 
+void destroy_list(node_t* current){
+  node_t* runner = current;
+  while(current != node_get_next(current)){
+    runner = node_get_next(current);
+    node_set_next(current, node_get_next(runner));
+    node_del(runner);
+    runner = current;
+  }
+  node_del(current);
+}
+
 
 
 
@@ -80,4 +91,27 @@ node_t* find_node(node_t* current,int place, int wmin){
     current=current->next;
   }
   return current;
+}
+
+
+pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage){
+
+  if(seqnumDebut%256<seqnumFin%256){
+        if(!(seqnum>seqnumDebut && seqnum<seqnumFin)){// le sequnum n'est est dans les limites acceptables
+            return E_SEQNUM;
+        }
+        decalage = (seqnum%256) - (seqnumDebut%256);
+    }
+    if(seqnumDebut%256>seqnumFin%256){
+        if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
+            return E_SEQNUM;
+        }
+        if((seqnum%256)>(seqnumDebut%256)){
+            decalage = (seqnum%256)-(seqnumDebut%256);
+        }
+        else{
+            decalage = (seqnum%256) + (256 - (seqnumDebut%256));
+        }
+    }
+    return PKT_OK;
 }

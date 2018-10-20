@@ -23,40 +23,72 @@ la taille de la fenetre actuel du receveur. timestamp n'est pas encore défini
 
 
 
-pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t timestamp){
-	int res = 1;
 
-	if(pkt_get_type(recu) != PTYPE_DATA){
-		return E_TR;
-	}
-	if(pkt_get_tr(recu) != 0){
-		return E_TR
+
+
+pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t timestamp, int seqnumDebut, int seqnumFin, int* decalage){
+
+
+	if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
+		return E_SEQNUM;
 	}
 
-	pkt_status_code statEnvoi = PKT_OK;
-	pkt_set_tr(renvoi, 0);
+	int seqnum = pkt_get_sequnum(recu);
+    /*if(seqnumDebut%256<seqnumFin%256){
+        if(!(seqnum>seqnumDebut && seqnum<seqnumFin)){// le sequnum n'est est dans les limites acceptables
+            return E_SEQNUM;
+        }
+        decalage = (seqnum%256) - (seqnumDebut%256);
+    }
+    if(seqnumDebut%256>seqnumFin%256){
+        if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
+            return E_SEQNUM;
+        }
+        if((seqnum%256)>(seqnumDebut%256)){
+            decalage = (seqnum%256)-(seqnumDebut%256);
+        }
+        else{
+            decalage = (seqnum%256) + (256 - (seqnumDebut%256));
+        }
+    }*/
+
+    pkt_status_code stat = difference(seqnumDebut, seqnumFin, seqnum, decalage);
+    if(stat != PKT_OK){
+    	return stat;
+    }
+
+    int tr = pkt_get_tr(recu);
+
+    pkt_set_tr(renvoi, 0);
 	pkt_set_window(renvoi, window);
 	pkt_set_length(renvoi, 0);
-	pkt_set_timestamp(renvoi, timestamp);
+	pkt_set_timestamp(renvoi, timestamp);_
 
+    if(decalage =! 0){
+    	if(tr){//signal tronqué et mauvais seqnum, on renvoi un nack avec le seqnum recu
+    		pkt_set_type(renvoi, PTYPE_NACK);
+    		pkt_set_seqnum(renvoi, seqnum);
+    		return PKT_OK;
+    	}
+    	else{//mauvais seqnum, on renvoi un ack avec le seqnum attendu mais il faut enregistrer paquet dans le buffer
+    		pkt_set_type(renvoi, PTYPE_ACK);
+    		pkt_set_seqnum(renvoi, seqnumDebut);
+    		return PKT_OK;
+    	}
+    }
+    if(decalage == 0){
+    	if(tr){//bon seqnum mais signal tronqué, on renvoi un nack avec le num de sequence recu
+    		pkt_set_type(renvoi, PTYPE_NACK);
+    		pkt_set_seqnum(renvoi, seqnum);
+    		return PKT_OK;
+    	}
+    	else{//signal correct et bon num de séquence, on renvoi un ack avec le prochain seqnum attendu
+    		pkt_set_type(renvoi, PTYPE_ACK);
+    		pkt_set_seqnum(renvoi, seqnum+1);
+    		return PKT_OK;
 
-	uint16_t sequnum;
-	if(statRecu != PKT_OK){// renvoi un nack
-		pkt_set_type(renvoi, PTYPE_NACK);
-		sequnum = pkt_get_sequnum(recu);
-		if(sequnum >512 || 11 sequnum<0){//seqnum n'est pas acceptable -> ignoré
-			return E_SEQNUM;
-		}
-		pkt_set_sequnum(renvoi, sequnum);
-		return PKT_OK;
-	}
-
-	if(statRecu == PKT_OK){
-		pkt_get_type(renvoi, PTYPE_ACK);
-		sequnum = (pkt_get_sequnum(recu)+1)%2;
-		pkt_set_sequnum(renvoi, sequnum);
-		return PKT_OK;
-	}
+    	}
+    }
 }
 
 
@@ -73,6 +105,13 @@ sdf est le file descripteur du socket lu. pkt est le paquet de réponse
             
 pkt_status_code read_write_loop(int sfd, int fd) {
     char reader[528];
+    int seqnumDebut = 0;
+    int seqnumFin = 31;
+    int* decalage;
+	node_t* current;
+	node_t* runner;
+	current = create_empty_list(62) //2 fois la taille max de la window
+	runner = current;
 
     while(1)
     {
@@ -93,9 +132,9 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512) + header(16)
             if(length<12)//la taille est plus petite que le header
             {
-                fprintf(stderr,"ERROR: %s\n", strerror(errno));
+                fprintf(stderr,"ERROR: %s\n", strerror(errno)); // il faut ignorer le fichier
                 fprintf(stderr,"Erreur read socket\n");
-                return E_UNCONSISTENT;
+                //return E_UNCONSISTENT;
             }
 
             if(length == 0){//fin du programme
@@ -105,36 +144,63 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             pkt_t* recu = pkt_new();
             pkt_status_code stat = pkt_decode(reader, length, recu);
             if(stat != PKT_OK){
-                return stat;
-            }
-            int rep;
-            stat = reponse(recu, renvoi, 31, 0)// taille max du window, timestamp à voir ??
-            if(stat != PKT_OK){ // le paquet doit être ignoré
-                return stat;
+                fprintf(stderr, "erreur décode \n"); // ne pas sortir de la boucle ??
             }
 
-            //envoyer le packet sur le socket
-            char* renvoiChar[12];
-            stat = encode(renvoi, renvoiChar, 12); // erreur dans encode ??
-            write(sfd, renvoiChar, 12);
-
-            int w = write(fd, recu->payload, recu->length);
-            if(w != -1){ 
-                fprintf(stderr, "erreur dans l'écriture du recever \n");
-                exit(EXIT_FAILURE);
+            char renvoiChar[12];
+            stat = reponse(recu, renvoi, 31, 0, seqnumDebut, seqnumFin, decalage);
+            if(stat == PKT_OK){
+            	if(pkt_get_type(renvoi) == PTYPE_NACK){//le message recu était tronqué
+            		encode(renvoi, renvoiChar, 12);
+            		write(sdf, renvoiChar, 12);
+            	}
+            	if(pkt_get_type(renvoi) == PTYPE_ACK){
+            		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
+            			seqnumDebut = seqnumDebut+1;
+            			seqnumFin = seqnumFin+1;
+            			write(1, pkt_get_payload(recu), pkt_get_length(recu));
+            			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
+            			encode(renvoi, renvoiChar, 12);
+            			write(sfd, renvoiChar, 12);
+            			while(node_get_data(current) != NULL){//vide buf
+            				pkt* videBuffer = node_get_data(current);
+            				write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
+            				write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
+            				//encode(videBuffer, renvoiChar, 12);
+            				//write(sfd, renvoiChar, 12);
+            				seqnumDebut = seqnumDebut + 1;
+            				seqnumFin = seqnumFin + 1;
+            				node_set_data(current, NULL);
+            				current = node_get_next(current);
+            				runner = current;
+            				pkt_del(videBuffer);
+            			}
+  	         		}
+  	         		else{
+  	         			runner = find_node(current, *decalage-1, 0);//le paquet n'est pas tronqué mais le seqnum n'est pas correct. Le paquet est stocké dans le buffer
+  	         			node_set_data(runner, recu);
+  	         			runner = current;
+  	         			encode(renvoi, renvoiChar, 12);
+  	         			write(sfd, renvoiChar, 12);
+  	         		}
+            	}
             }
-            if(w != recu->length){
-                return E_LENGTH;
-            }
-            
         }
     }
+destroy_list(runner);
 }
+
+
+
+
+         
+
 
 /*
 lit le socket, renvoie un ACK ou NACK, écrit sur l'entrée standard et dans le fichier
 */
-void recever(int sfd, char* nomFichier){
+void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
+
 	int fd = open(nomFichier, O_WRONLY);
 	if(fd == -1){
 		fprintf(stderr, "erreur dans l'ouverture du fichier de sortie\n");
