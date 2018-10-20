@@ -24,5 +24,6 @@ void node_set_next();
 pkt_t* node_get_data(node_t *node);
 node_t* node_get_next(node_t *node);
 node_t* create_empty_list(int number);
+node_t* find_node(node_t* current,int place, int wmin);
 
 #endif

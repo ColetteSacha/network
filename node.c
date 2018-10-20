@@ -73,3 +73,11 @@ node_t* create_empty_list(int number)
   current->next=ret;
   return ret;
 }
+
+node_t* find_node(node_t* current,int place, int wmin){
+  int nbrIteration=place-wmin;
+  for(int i=0;i<nbrIteration;i++){
+    current=current->next;
+  }
+  return current;
+}
