@@ -30,13 +30,14 @@
    int notSendOnes=1;
    node_t*current=create_empty_list(62);
    node_t*toSend=current;
+   int numeroDeSequence=0;
 
 
 
 
 
 
-void read_write_loop(int sfd) {
+void read_write_loop(int sfd,int fdEntree) {
     int ret=-1;
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
@@ -51,7 +52,7 @@ void read_write_loop(int sfd) {
     {
         struct pollfd fds[2];
 
-        fds[0].fd=0;
+        fds[0].fd=fdEntree;
         fds[0].events=POLLIN;
         fds[1].fd = sfd;
         fds[1].events = POLLIN;
@@ -79,6 +80,12 @@ void read_write_loop(int sfd) {
             //totalLengthr+=length;
 
             //todo: METTRE LE CHAR DS UN pkt(node_get_data(current[0]))
+            node_get_data(toSend)=pkt_new();
+            if(create_packet(reader,sizeof(reader),32,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
+              fprintf(stderr, "====erreure lors du create_packet" );
+              return;
+            }
+            numeroDeSequence++;
 
 
             char charAEnvoyer[528];
@@ -124,7 +131,12 @@ void read_write_loop(int sfd) {
                 }
                 //totalLengthr+=length;
 
-                //todo: METTRE LE CHAR DS UN pkt
+                node_get_data(toSend)=pkt_new();
+                if(create_packet(reader,sizeof(reader),32,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
+                  fprintf(stderr, "====erreure lors du create_packet" );
+                  return;
+                }
+                numeroDeSequence++;
 
 
                 char charAEnvoyer[528];
@@ -166,20 +178,22 @@ void read_write_loop(int sfd) {
 
         if (fds[1].revents & POLLIN){
             int length=read(sfd, writer, 12);
-            if(length<0)
+            if(length<=0)
             {
-              destroy_list(current);
+                destroy_list(current);
                 fprintf(stderr,"ERROR: %s\n", strerror(errno));
                 fprintf(stderr,"Erreur read socket\n");
                 return;
             }
             //totalLengthw+=length;
-            if(length==0)//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          /*  if(length==0)//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             {
-               destroy_list(current);
+                destroy_list(current);
                 //fprintf(stderr,"Fin du programme");
                 return;
             }
+
+            */
 
             pkt_t* paquetDecode=pkt_new();//attention, a pkt_del() a la fin du programme
             memcpy(paquetDecode,writer,2);
@@ -190,6 +204,7 @@ void read_write_loop(int sfd) {
             else{//paquest recu est de type ack. Acheke:numéro de séquence
               if(premierMessage){//si la lecture était le premier message
                 pkt_del(paquetDecode);
+                pkt_del(node_get_data(current));
                 premierMessage=0;
                 current=current->next;
 
@@ -205,8 +220,8 @@ void read_write_loop(int sfd) {
                     int nbrAdecaler=paquetDecode->seqnum-wmin;
                     for(int i=0;i<nbrAdecaler;i++){
 
-                     //!!!!!!!!!!!!!!!!!pas delete car il faut le réutiliser!!!!!!!!!!!!!!!!!!
 
+                      pkt_del(node_get_data(current));
                       current=current->next;
                     }
                     wmin=wmin+nbrAdecaler;//déplace la fenetre

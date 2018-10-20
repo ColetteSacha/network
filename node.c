@@ -85,11 +85,7 @@ node_t* create_empty_list(int number)
   return ret;
 }
 
-void destroy_list(node_t* first){
-  while(first!=NULL){
-    node_t* afree=
-  }
-}
+
 
 
 
