@@ -6,11 +6,12 @@
 
 
 
-chrono_t* chrono_new(){
+chrono_t* chrono_new(int seq){
   chrono_t* ret=malloc(sizeof(chrono_t));
   if(ret==NULL){
   	return NULL;
   	}
+    ret->seqnum=seq;
   return ret;
 
 }
@@ -43,3 +44,19 @@ struct timeval chrono_get_currentTime(chrono_t* chrono){
   ret.tv_usec=maintenant.tv_usec-celuici.tv_usec;
   return ret;
 }
+
+/*chrono_t** create_tab_chrono(int numb){
+  chrono_t* ret[numb];
+  for(int i=0;i<numb;i++){
+    chrono_t *new=chrono_new(i);
+    ret[i]=new;
+  }
+  return ret;
+}
+
+void destroy_tab_chrono(chrono_t** tab,int taille){
+  for(int i=0;i<taille;i++){
+    chrono_del(tab[i]);
+  }
+}
+*/

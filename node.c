@@ -74,6 +74,14 @@ node_t* create_empty_list(int number)
   return ret;
 }
 
+void destroy_list(node_t* first){
+  while(first!=NULL){
+    node_t* afree=
+  }
+}
+
+
+
 node_t* find_node(node_t* current,int place, int wmin){
   int nbrIteration=place-wmin;
   for(int i=0;i<nbrIteration;i++){
