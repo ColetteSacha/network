@@ -14,6 +14,50 @@
 #include <errno.h>
 #include <sys/poll.h>
 
+//optind
+int main(int argc, char *argv[]){
+int opt;
+int port;
+char* nomFichier;
+char* horstName;
+	while((opt = getopt(argc, argv, "f:")) != -1){
+		case 'f':
+		nomFichier = optarg;
+		break;
+	}
+
+	port = atoi(argv[optind + 1]);
+	hostName = argv[optind];
+
+	struct sockaddr_in6 addr = malloc(sizeof(struct sockaddr_in6)); 
+	int sfd;
+	real_address(hostName, addr);
+	sfd = create_socket(addr, port, NULL, -1); /* Bound */
+		if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */
+			fprintf(stderr,
+					"Could not connect the socket after the first message.\n");
+			close(sfd);
+			return EXIT_FAILURE;
+		}
+	}
+	if (sfd < 0) {
+		fprintf(stderr, "Failed to create the socket!\n");
+		return EXIT_FAILURE;
+	}
+	/* Process I/O */
+	read_write_loop(sfd);
+
+	close(sfd);
+	free(addr);
+
+	return EXIT_SUCCESS;
+}
+
+
+
+
+
+
 /*
 la fonction place dans renvoi le paquet ACK ou NACK qui devra être renvoyé. 
 Si la fonction renvoit autre chose que PKT_OK le paquet doit être ignoré
@@ -108,6 +152,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
     int seqnumDebut = 0;
     int seqnumFin = 31;
     int* decalage;
+    decalage = malloc(sizeof(int));
 	node_t* current;
 	node_t* runner;
 	current = create_empty_list(62) //2 fois la taille max de la window
