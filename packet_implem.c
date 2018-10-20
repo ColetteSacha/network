@@ -388,3 +388,27 @@ pkt_status_code pkt_set_payload(pkt_t *pkt,
     return PKT_OK;
 
 }
+
+/*
+crée un packet. Ne calcule pas les crc1 et crc2, ils sont calculé dans encode
+*/
+pkt_status_code create_packet(char* payload, int length,uint8_t window, uint8_t sequNum,uint32_t timestamp, pkt_t* paquet){
+	pkt_status_code stat;
+	stat = pkt_set_type(paquet, PTYPE_DATA);
+	stat = pkt_set_tr(paquet, 0);
+	stat = pkt_set_window(paquet, window);
+	if(stat != PKT_OK){
+		return stat;
+	}
+	stat = pkt_set_seqnum(paquet, seqNum); // gérer les erreur dans le sequnum ??
+	stat = pkt_set_length(paquet, length);
+	if(stat != PKT_OK){
+		return stat;
+	}
+	stat = pkt_set_timestamp(paquet, timestamp);
+	stat = pkt_set_payload(paquet, payload, (uint16_t) length);
+	if(stat != PKT_OK){
+		return stat;
+	}
+	return PKT_OK;
+}
