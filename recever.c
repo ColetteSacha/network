@@ -13,25 +13,29 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/poll.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 //optind
 int main(int argc, char *argv[]){
 int opt;
 int port;
 char* nomFichier;
-char* horstName;
-	while((opt = getopt(argc, argv, "f:")) != -1){
-		case 'f':
-		nomFichier = optarg;
-		break;
+char* hostName;
+	while((opt = getopt(argc, argv, "f:")) != -1)
+	{
+		switch(opt)
+			case 'f':
+			nomFichier = optarg;
+			break;
 	}
 
 	port = atoi(argv[optind + 1]);
 	hostName = argv[optind];
 
-	struct sockaddr_in6 addr = malloc(sizeof(struct sockaddr_in6)); 
+	struct sockaddr_in6 addr;
 	int sfd;
-	real_address(hostName, addr);
+	real_address(&hostName, addr);
 	sfd = create_socket(addr, port, NULL, -1); /* Bound */
 		if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */
 			fprintf(stderr,
@@ -39,7 +43,7 @@ char* horstName;
 			close(sfd);
 			return EXIT_FAILURE;
 		}
-	}
+	
 	if (sfd < 0) {
 		fprintf(stderr, "Failed to create the socket!\n");
 		return EXIT_FAILURE;
@@ -48,8 +52,6 @@ char* horstName;
 	read_write_loop(sfd);
 
 	close(sfd);
-	free(addr);
-
 	return EXIT_SUCCESS;
 }
 
@@ -155,7 +157,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
     decalage = malloc(sizeof(int));
 	node_t* current;
 	node_t* runner;
-	current = create_empty_list(62) //2 fois la taille max de la window
+	current = create_empty_list(62); //2 fois la taille max de la window
 	runner = current;
 
     while(1)
@@ -165,7 +167,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
         renvoi = pkt_new(); // ne pas oublier de free
         fds.fd = sfd;
         fds.events = POLLIN;
-        ret = poll(fds, 1, -1 );
+        int ret = poll(fds, 1, -1 );
         if (ret<0) {
             fprintf(stderr,"select error\n");
             fprintf(stderr,"ERROR: %s\n", strerror(errno));
@@ -208,7 +210,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			encode(renvoi, renvoiChar, 12);
             			write(sfd, renvoiChar, 12);
             			while(node_get_data(current) != NULL){//vide buf
-            				pkt* videBuffer = node_get_data(current);
+            				pkt_t* videBuffer = node_get_data(current);
             				write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				//encode(videBuffer, renvoiChar, 12);
