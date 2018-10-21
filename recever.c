@@ -16,44 +16,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "packet_interface.h"
+#include "node.h"
+#include "wait_for_client.h"
+#include "create_socket.h"
+#include "real_address.h"
+
+
 //optind
-int main(int argc, char *argv[]){
-int opt;
-int port;
-char* nomFichier;
-char* hostName;
-	while((opt = getopt(argc, argv, "f:")) != -1)
-	{
-		switch(opt)
-			case 'f':
-			nomFichier = optarg;
-			break;
-	}
-
-	port = atoi(argv[optind + 1]);
-	hostName = argv[optind];
-
-	struct sockaddr_in6 addr;
-	int sfd;
-	real_address(&hostName, addr);
-	sfd = create_socket(addr, port, NULL, -1); /* Bound */
-		if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */
-			fprintf(stderr,
-					"Could not connect the socket after the first message.\n");
-			close(sfd);
-			return EXIT_FAILURE;
-		}
-	
-	if (sfd < 0) {
-		fprintf(stderr, "Failed to create the socket!\n");
-		return EXIT_FAILURE;
-	}
-	/* Process I/O */
-	read_write_loop(sfd);
-
-	close(sfd);
-	return EXIT_SUCCESS;
-}
 
 
 
@@ -74,12 +44,12 @@ la taille de la fenetre actuel du receveur. timestamp n'est pas encore défini
 
 pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t timestamp, int seqnumDebut, int seqnumFin, int* decalage){
 
-
+	uint8_t seqnum = pkt_get_seqnum(recu);
 	if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
 		return E_SEQNUM;
 	}
 
-	int seqnum = pkt_get_sequnum(recu);
+
     /*if(seqnumDebut%256<seqnumFin%256){
         if(!(seqnum>seqnumDebut && seqnum<seqnumFin)){// le sequnum n'est est dans les limites acceptables
             return E_SEQNUM;
@@ -108,9 +78,9 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
     pkt_set_tr(renvoi, 0);
 	pkt_set_window(renvoi, window);
 	pkt_set_length(renvoi, 0);
-	pkt_set_timestamp(renvoi, timestamp);_
+	pkt_set_timestamp(renvoi, timestamp);
 
-    if(decalage =! 0){
+    if(*decalage =! 0){
     	if(tr){//signal tronqué et mauvais seqnum, on renvoi un nack avec le seqnum recu
     		pkt_set_type(renvoi, PTYPE_NACK);
     		pkt_set_seqnum(renvoi, seqnum);
@@ -159,6 +129,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 	node_t* runner;
 	current = create_empty_list(62); //2 fois la taille max de la window
 	runner = current;
+	size_t taille = 12;
 
     while(1)
     {
@@ -167,7 +138,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
         renvoi = pkt_new(); // ne pas oublier de free
         fds.fd = sfd;
         fds.events = POLLIN;
-        int ret = poll(fds, 1, -1 );
+        int ret = poll(&fds, 1, -1 );
         if (ret<0) {
             fprintf(stderr,"select error\n");
             fprintf(stderr,"ERROR: %s\n", strerror(errno));
@@ -198,8 +169,8 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             stat = reponse(recu, renvoi, 31, 0, seqnumDebut, seqnumFin, decalage);
             if(stat == PKT_OK){
             	if(pkt_get_type(renvoi) == PTYPE_NACK){//le message recu était tronqué
-            		encode(renvoi, renvoiChar, 12);
-            		write(sdf, renvoiChar, 12);
+            		pkt_encode(renvoi, renvoiChar, &taille);//12
+            		write(sfd, renvoiChar, 12);
             	}
             	if(pkt_get_type(renvoi) == PTYPE_ACK){
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
@@ -207,7 +178,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			seqnumFin = seqnumFin+1;
             			write(1, pkt_get_payload(recu), pkt_get_length(recu));
             			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
-            			encode(renvoi, renvoiChar, 12);
+            			pkt_encode(renvoi, renvoiChar, &taille);//12
             			write(sfd, renvoiChar, 12);
             			while(node_get_data(current) != NULL){//vide buf
             				pkt_t* videBuffer = node_get_data(current);
@@ -224,10 +195,12 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			}
   	         		}
   	         		else{
-  	         			runner = find_node(current, *decalage-1, 0);//le paquet n'est pas tronqué mais le seqnum n'est pas correct. Le paquet est stocké dans le buffer
+  	         			for(int i = 0; i<*decalage-1; i++){
+  	         				runner = node_get_next(runner);
+  	         			}
   	         			node_set_data(runner, recu);
   	         			runner = current;
-  	         			encode(renvoi, renvoiChar, 12);
+  	         			pkt_encode(renvoi, renvoiChar, &taille); //12
   	         			write(sfd, renvoiChar, 12);
   	         		}
             	}
@@ -264,4 +237,43 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 	return;
 
 }
+
+int main(int argc, char *argv[]){
+int opt;
+int port;
+char* nomFichier;
+char* hostName;
+	while((opt = getopt(argc, argv, "f:")) != -1)
+	{
+		switch(opt)
+			case 'f':
+			nomFichier = optarg;
+			break;
+	}
+
+	port = atoi(argv[optind + 1]);
+	hostName = argv[optind];
+
+	struct sockaddr_in6 addr;
+	int sfd;
+	real_address(hostName, &addr);
+	sfd = create_socket(&addr, port, NULL, -1); /* Bound */
+		if (sfd > 0 && wait_for_client(sfd) < 0) { /* Connected */
+			fprintf(stderr,
+					"Could not connect the socket after the first message.\n");
+			close(sfd);
+			return EXIT_FAILURE;
+		}
+	
+	if (sfd < 0) {
+		fprintf(stderr, "Failed to create the socket!\n");
+		return EXIT_FAILURE;
+	}
+	/* Process I/O */
+	recever(sfd, nomFichier);
+
+	close(sfd);
+	return EXIT_SUCCESS;
+}
+
 
