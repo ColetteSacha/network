@@ -13,7 +13,24 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/poll.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <zlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <stdlib.h>
+#include "packet_interface.h"
 #include "node.h"
+
+
+
+
+
+
 
 //Avec l'aide de Vahid Beyraghi et Jonathan Thibaut
 /* Loop reading a socket and printing to stdout,
@@ -28,10 +45,42 @@
    int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
    int wmax=31;
    int notSendOnes=1;
-   node_t*current=create_empty_list(62);
-   node_t*toSend=current;
+   node_t *current=create_empty_list(62);
+   node_t *toSend=current;
    int numeroDeSequence=0;
 
+
+
+
+
+
+   int resend(int numseq,int sfd){
+
+     node_t* noeudAenvoyer=find_node(current,wmin,wmax,numseq);
+     pkt_t* paquetAEnvoyer=noeudAenvoyer->data;
+
+     char charAEnvoyer[528];
+     size_t *l;
+     *l=528*sizeof(char);
+
+     pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,l);
+     if(codeRetour!=PKT_OK){
+       fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
+     }
+
+
+     if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+     {
+        destroy_list(current);
+         fprintf(stderr,"ERROR: %s\n", strerror(errno));
+         fprintf(stderr,"Erreur write sfd\n");
+         return 0;
+     }
+   memset(charAEnvoyer,0,528);
+   return 1;
+
+
+   }
 
 
 
@@ -80,17 +129,24 @@ void read_write_loop(int sfd,int fdEntree) {
             //totalLengthr+=length;
 
             //todo: METTRE LE CHAR DS UN pkt(node_get_data(current[0]))
-            node_get_data(toSend)=pkt_new();
-            if(create_packet(reader,sizeof(reader),32,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
+            pkt_t *un=pkt_new();
+
+            pkt_status_code status= create_packet(reader,sizeof(reader),32,numeroDeSequence,0,un);
+            if(status!=PKT_OK){
               fprintf(stderr, "====erreure lors du create_packet" );
               return;
             }
+            node_set_data(toSend,un);
+
+
             numeroDeSequence++;
 
 
             char charAEnvoyer[528];
+            size_t *l;
+            *l=528*sizeof(char);
 
-            pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,sizeof(charAEnvoyer));
+            pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,l);
             if(codeRetour!=PKT_OK){
               fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
             }
@@ -118,7 +174,7 @@ void read_write_loop(int sfd,int fdEntree) {
           else{
 
             if(!premierMessage){
-              pkt_t chekeWindow=node_get_data(toSend);
+              pkt_t* chekeWindow=node_get_data(toSend);//!!!!!!!!!!!!!!!!
 
               while(pkt_get_seqnum(chekeWindow)<wmax){
 
@@ -131,7 +187,8 @@ void read_write_loop(int sfd,int fdEntree) {
                 }
                 //totalLengthr+=length;
 
-                node_get_data(toSend)=pkt_new();
+                node_set_data(toSend,pkt_new());
+
                 if(create_packet(reader,sizeof(reader),32,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
                   fprintf(stderr, "====erreure lors du create_packet" );
                   return;
@@ -143,8 +200,10 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
                 char charAEnvoyer[528];
+                size_t *len;
+                *len=528*sizeof(char);
 
-                pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,sizeof(charAEnvoyer));
+                pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,len);
                 //!!!!!!!!!!!!!pas paquet AEnvoyer ms packet ds current!!!!!!!!!!!!!!!!!!!
 
 
@@ -201,7 +260,7 @@ void read_write_loop(int sfd,int fdEntree) {
             pkt_t* paquetDecode=pkt_new();//attention, a pkt_del() a la fin du programme
             memcpy(paquetDecode,writer,2);
             if(paquetDecode->type!=2){//le paquet recu n'est pas un ack
-            send(paquetDecode->seqnum);
+            resend(paquetDecode->seqnum,sfd);
             pkt_del(paquetDecode);
             }
             else{//paquest recu est de type ack. Acheke:numéro de séquence
@@ -215,13 +274,13 @@ void read_write_loop(int sfd,int fdEntree) {
               }
               else{//on cheke si le numéro de séquence recu est celui attendu
                 if(paquetDecode->seqnum==wmin){//!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  send(paquetDecode->seqnum);
+                  resend(paquetDecode->seqnum,sfd);
                   pkt_del(paquetDecode);
                 }
                 else{//grace aux acquis cumulatifs, on sait que tous les paquets ont bien été recu
 // jusqu'au numéro de séquence recu
                     int* nbrAdecaler=malloc(sizeof(int));
-                    pkt_status_code codeDeRetour=difference(wmin,wmax,paquetDecode->seqnum,nbrAdecaler)
+                    pkt_status_code codeDeRetour=difference(wmin,wmax,paquetDecode->seqnum,nbrAdecaler);
                     for(int i=0;i<*nbrAdecaler;i++){
 
 
@@ -243,29 +302,4 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
     }//fin du while
-}
-
-
-int send(int numseq){
-  node_t* noeudAenvoyer=find_node(current,numseq,wmin);
-  pkt_t* paquetAEnvoyer=noeudAenvoyer->data;
-
-  char charAEnvoyer[528];
-
-  pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,sizeof(charAEnvoyer));
-  if(codeRetour!=PKT_OK){
-    fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
-  }
-
-
-  if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
-  {
-     destroy_list(current);
-      fprintf(stderr,"ERROR: %s\n", strerror(errno));
-      fprintf(stderr,"Erreur write sfd\n");
-      return;
-  }
-memset(charAEnvoyer,0,528);
-
-
 }

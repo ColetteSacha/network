@@ -7,9 +7,23 @@
 
 
 int main(int argc, char *argv[]){
-int *decalage=malloc(sizeof(int ));
-difference(5,10,10,decalage);
-printf("%d\n", *decalage);
+  node_t*first=create_empty_list(3);
+  node_t *toSend=first;
+  pkt_t*premierPack=pkt_new();
+  pkt_set_length(premierPack,1);
+  pkt_t*deuxPack=pkt_new();
+  pkt_set_length(deuxPack,2);
+  pkt_t*troisPack=pkt_new();
+  pkt_set_length(troisPack,3);
+  node_set_data(first,premierPack);
+  toSend=toSend->next;
+  node_set_data(toSend,deuxPack);
+  toSend=toSend->next;
+  node_set_data(toSend,troisPack);
+  toSend=toSend->next;
+  toSend=find_node(toSend,37,35);
+  pkt_t* atest=node_get_data(first);
+  printf("%d\n", pkt_get_length(atest));
 
 
 return 1;

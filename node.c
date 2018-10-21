@@ -89,13 +89,6 @@ node_t* create_empty_list(int number)
 
 
 
-node_t* find_node(node_t* current,int place, int wmin){
-  int nbrIteration=place-wmin;
-  for(int i=0;i<nbrIteration;i++){
-    current=current->next;
-  }
-  return current;
-}
 
 
 pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage){
@@ -118,4 +111,14 @@ pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* deca
         }
     }
     return PKT_OK;
+}
+
+node_t* find_node(node_t* current,int wmin,int seqnumFin, int place){
+  int *nbrIteration=malloc(sizeof(int));
+  difference(wmin,seqnumFin,place,nbrIteration);
+  for(int i=0;i<*nbrIteration;i++){
+    current=current->next;
+  }
+  free(nbrIteration);
+  return current;
 }
