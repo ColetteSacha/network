@@ -45,8 +45,8 @@
    int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
    int wmax=31;
    int notSendOnes=1;
-   node_t *current=create_empty_list(62);
-   node_t *toSend=current;
+   node_t *current;
+   node_t *toSend;
    int numeroDeSequence=0;
 
 
@@ -88,6 +88,8 @@
 
 void read_write_loop(int sfd,int fdEntree) {
     int ret=-1;
+    current=create_empty_list(62);
+    toSend=current;
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
     //int totalLengthw=0;
@@ -259,8 +261,8 @@ void read_write_loop(int sfd,int fdEntree) {
 
             pkt_t* paquetDecode=pkt_new();//attention, a pkt_del() a la fin du programme
             memcpy(paquetDecode,writer,2);
-            if(paquetDecode->type!=2){//le paquet recu n'est pas un ack
-            resend(paquetDecode->seqnum,sfd);
+            if(pkt_get_type(paquetDecode)!=PTYPE_ACK){//le paquet recu n'est pas un ack
+            resend(pkt_get_seqnum(paquetDecode),sfd);
             pkt_del(paquetDecode);
             }
             else{//paquest recu est de type ack. Acheke:numéro de séquence
@@ -273,14 +275,14 @@ void read_write_loop(int sfd,int fdEntree) {
 
               }
               else{//on cheke si le numéro de séquence recu est celui attendu
-                if(paquetDecode->seqnum==wmin){//!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  resend(paquetDecode->seqnum,sfd);
+                if(pkt_get_seqnum(paquetDecode)==wmin){//!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  resend(pkt_get_seqnum(paquetDecode),sfd);
                   pkt_del(paquetDecode);
                 }
                 else{//grace aux acquis cumulatifs, on sait que tous les paquets ont bien été recu
 // jusqu'au numéro de séquence recu
                     int* nbrAdecaler=malloc(sizeof(int));
-                    pkt_status_code codeDeRetour=difference(wmin,wmax,paquetDecode->seqnum,nbrAdecaler);
+                    pkt_status_code codeDeRetour=difference(wmin,wmax,pkt_get_seqnum(paquetDecode),nbrAdecaler);
                     for(int i=0;i<*nbrAdecaler;i++){
 
 
