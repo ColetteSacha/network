@@ -38,6 +38,7 @@ int wmax=31;
 int notSendOnes=1;
 node_t *current;
 node_t *toSend;
+node_t *finWind;
 int numeroDeSequence=0;
 
 
@@ -78,6 +79,8 @@ void read_write_loop(int sfd,int fdEntree) {
     int ret=-1;
     current=create_empty_list(62);
     toSend=current;
+    finWind=find_node(current,0,31,31);
+
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
     //int totalLengthw=0;
@@ -104,7 +107,6 @@ void read_write_loop(int sfd,int fdEntree) {
         }
         if ((fds[0].revents & POLLIN))
         {
-          fprintf(stderr, "===ligne 107:ok" );
           if(premierMessage && notSendOnes){//si c'est le premier message, on ne doit pas tout envoyer d'un coup
             notSendOnes=0;
 
@@ -121,8 +123,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
             //todo: METTRE LE CHAR DS UN pkt(node_get_data(current[0]))
             pkt_t *un=pkt_new();
-            fprintf(stderr, "====size du reader: %ld\n",sizeof(reader) );
-            fprintf(stderr, "====size de length: %d\n",length );
+
 
             pkt_status_code status= create_packet(reader,length,31,numeroDeSequence,0,un);
             if(status!=PKT_OK){
@@ -144,11 +145,11 @@ void read_write_loop(int sfd,int fdEntree) {
             if(codeRetour!=PKT_OK){
               fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
             }
-
+            pkt_t* pktforLen=node_get_data(toSend);
 
             //creation chrono_t
 
-            if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+            if(write(sfd,charAEnvoyer,16+pkt_get_length(pktforLen))!=16+pkt_get_length(pktforLen))
             {
                 destroy_list(current);
                 fprintf(stderr,"ERROR: %s\n", strerror(errno));
@@ -168,9 +169,10 @@ void read_write_loop(int sfd,int fdEntree) {
           else{
 
             if(!premierMessage){
-              pkt_t* chekeWindow=node_get_data(toSend);//!!!!!!!!!!!!!!!!
 
-              while(pkt_get_seqnum(chekeWindow)<wmax){
+              //pkt_t* chekeWindow=node_get_data(toSend);//!!!!
+
+              while(toSend!=finWind){
 
                 int length=read(0,reader,528);
                 if(length==0)
@@ -262,6 +264,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 pkt_del(node_get_data(current));
                 premierMessage=0;
                 current=current->next;
+                finWind=finWind->next;
 
 
               }
@@ -279,6 +282,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
                       pkt_del(node_get_data(current));
                       current=current->next;
+                      finWind=finWind->next;
                     }
                     wmin=wmin+*nbrAdecaler;//déplace la fenetre
                     wmax=wmax+*nbrAdecaler;
@@ -305,7 +309,7 @@ void read_write_loop(int sfd,int fdEntree) {
 void sender(int sfd, char* nomFichier){
   int fd;
   if(nomFichier==NULL){
-    fd=1;
+    fd=0;
   }
   else{
     fd=open(nomFichier,O_RDONLY);
@@ -344,9 +348,10 @@ int main(int argc, char *argv[]){
      return -1;
    }
  }
- fprintf(stderr, "ligne341:ok" );
  hostName=argv[optind];
  port=atoi(argv[optind+1]);
+ fprintf(stderr, "numéro de port: %d\n", port);
+
 
 struct sockaddr_in6 addr;
 const char *err=real_address(hostName,&addr);
@@ -354,13 +359,14 @@ if(err){
   fprintf(stderr, "Could not resolve hostname %s: %s\n", hostName, err);
   return EXIT_FAILURE;
 }
+
 int sfd=create_socket(NULL,-1,&addr,port);/* Connected */
 if(sfd<0){
   fprintf(stderr, "Failed to create the socket!\n");
   return EXIT_FAILURE;
 }
 
-sender (sfd,nomFichier);
+sender(sfd,nomFichier);
 close(sfd);
 
 

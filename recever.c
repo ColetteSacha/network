@@ -45,6 +45,7 @@ la taille de la fenetre actuel du receveur. timestamp n'est pas encore défini
 pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t timestamp, int seqnumDebut, int seqnumFin, int* decalage){
 
 	uint8_t seqnum = pkt_get_seqnum(recu);
+
 	if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
 		return E_SEQNUM;
 	}
@@ -69,18 +70,25 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
     }*/
 
     pkt_status_code stat = difference(seqnumDebut, seqnumFin, seqnum, decalage);
+		pkt_status_code te=E_WINDOW;
+
+
+
     if(stat != PKT_OK){
+
     	return stat;
     }
 
     int tr = pkt_get_tr(recu);
 
     pkt_set_tr(renvoi, 0);
+
 	pkt_set_window(renvoi, window);
 	pkt_set_length(renvoi, 0);
 	pkt_set_timestamp(renvoi, timestamp);
 
-    if(*decalage =! 0){
+
+    if(*decalage != 0){//*decalage =! 0
     	if(tr){//signal tronqué et mauvais seqnum, on renvoi un nack avec le seqnum recu
     		pkt_set_type(renvoi, PTYPE_NACK);
     		pkt_set_seqnum(renvoi, seqnum);
@@ -92,13 +100,17 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
     		return PKT_OK;
     	}
     }
-    if(decalage == 0){
+    if(*decalage == 0){//decalge
+
     	if(tr){//bon seqnum mais signal tronqué, on renvoi un nack avec le num de sequence recu
+
     		pkt_set_type(renvoi, PTYPE_NACK);
     		pkt_set_seqnum(renvoi, seqnum);
     		return PKT_OK;
     	}
-    	else{//signal correct et bon num de séquence, on renvoi un ack avec le prochain seqnum attendu
+    	else{
+
+				//signal correct et bon num de séquence, on renvoi un ack avec le prochain seqnum attendu
     		pkt_set_type(renvoi, PTYPE_ACK);
     		pkt_set_seqnum(renvoi, seqnum+1);
     		return PKT_OK;
@@ -167,13 +179,20 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
             char renvoiChar[12];
             stat = reponse(recu, renvoi, 31, 0, seqnumDebut, seqnumFin, decalage);
+
+
+
             if(stat == PKT_OK){
+
+
             	if(pkt_get_type(renvoi) == PTYPE_NACK){//le message recu était tronqué
+
             		pkt_encode(renvoi, renvoiChar, &taille);//12
             		write(sfd, renvoiChar, 12);
 								pkt_del(recu);
             	}
             	if(pkt_get_type(renvoi) == PTYPE_ACK){
+
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
             			seqnumDebut = seqnumDebut+1;
             			seqnumFin = seqnumFin+1;
@@ -208,6 +227,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         		}
             	}
             }
+					//	else{
+
+						//}
+
         }
     }
 destroy_list(runner);
@@ -248,7 +271,6 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 }
 
 int main(int argc, char *argv[]){
-	fprintf(stdout,"ligne 251 ok\n" );
 int opt;
 int port;
 char* nomFichier=NULL;

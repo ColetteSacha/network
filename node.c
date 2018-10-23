@@ -71,7 +71,9 @@ void destroy_list(node_t* current){
 
 node_t* create_empty_list(int number)
 {
+
   node_t* ret=new_node();
+
   if(number==1){
     return ret;
   }
@@ -93,14 +95,19 @@ node_t* create_empty_list(int number)
 
 pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage){
 
+
+
+
   if(seqnumDebut%256<seqnumFin%256){
-        if(!(seqnum>seqnumDebut && seqnum<=seqnumFin)){// le sequnum n'est est dans les limites acceptables
+
+        if(!(seqnum>=seqnumDebut && seqnum<=seqnumFin)){// !!!! avant seqnum>seqnumDebut
             return E_SEQNUM;
         }
         *decalage = (seqnum%256) - (seqnumDebut%256);
     }
     if(seqnumDebut%256>seqnumFin%256){
         if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
+
             return E_SEQNUM;
         }
         if((seqnum%256)>(seqnumDebut%256)){
