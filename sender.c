@@ -104,7 +104,7 @@ void read_write_loop(int sfd,int fdEntree) {
         }
         if ((fds[0].revents & POLLIN))
         {
-
+          fprintf(stderr, "===ligne 107:ok" );
           if(premierMessage && notSendOnes){//si c'est le premier message, on ne doit pas tout envoyer d'un coup
             notSendOnes=0;
 
@@ -113,6 +113,7 @@ void read_write_loop(int sfd,int fdEntree) {
             {
               //fin du fichier
               destroy_list(current);
+              fprintf(stderr, "======== erreur ligne116" );
 
                 return;
             }
@@ -322,6 +323,8 @@ void sender(int sfd, char* nomFichier){
 
 
 int main(int argc, char *argv[]){
+  printf("ligne326:ok\n" );
+
  int opt;
  int port;
  char* nomFichier=NULL;
@@ -337,6 +340,7 @@ int main(int argc, char *argv[]){
      return -1;
    }
  }
+ fprintf(stderr, "ligne341:ok" );
  hostName=argv[optind];
  port=atoi(argv[optind+1]);
 
@@ -352,7 +356,8 @@ if(sfd<0){
   return EXIT_FAILURE;
 }
 
-
+sender (sfd,nomFichier);
+close(sfd);
 
 
 

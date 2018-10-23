@@ -248,6 +248,7 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 }
 
 int main(int argc, char *argv[]){
+	fprintf(stdout,"ligne 251 ok\n" );
 int opt;
 int port;
 char* nomFichier=NULL;
