@@ -196,7 +196,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
             			seqnumDebut = seqnumDebut+1;
             			seqnumFin = seqnumFin+1;
-            			write(1, pkt_get_payload(recu), pkt_get_length(recu));
+            			//write(1, pkt_get_payload(recu), pkt_get_length(recu));
             			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
             			pkt_encode(renvoi, renvoiChar, &taille);//12
             			write(sfd, renvoiChar, 12);
@@ -251,7 +251,7 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 	 fd=1;
  }
  else{
-	 fd = open(nomFichier, O_WRONLY);
+	 fd = open(nomFichier, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
  }
 
 	if(fd == -1){

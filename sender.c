@@ -84,7 +84,7 @@ void read_write_loop(int sfd,int fdEntree) {
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
     //int totalLengthw=0;
-    char reader[528];
+    char reader[512];
     char writer[12];//12 octets nn? pas 528 vu que ps de payload ni crc2
     memset(reader,0,528);
     memset(writer,0,12);
@@ -110,7 +110,7 @@ void read_write_loop(int sfd,int fdEntree) {
           if(premierMessage && notSendOnes){//si c'est le premier message, on ne doit pas tout envoyer d'un coup
             notSendOnes=0;
 
-            int length=read(0,reader,528);
+            int length=read(fdEntree,reader,512);
             if(length==0)
             {
               //fin du fichier
@@ -126,10 +126,16 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
             pkt_status_code status= create_packet(reader,length,31,numeroDeSequence,0,un);
+            fprintf(stderr, "length=%d\n",length );
+
             if(status!=PKT_OK){
+              fprintf(stderr, "first\n" );
+              fprintf(stderr, "%d\n", status);
+              fprintf(stderr, "E_LENGTH=%d\n", E_LENGTH );
+
               fprintf(stderr, "====erreure lors du create_packet\n" );
 
-              fprintf(stderr, "%d\n", status);
+
               return;
             }
             node_set_data(toSend,un);
@@ -143,6 +149,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
             pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&l);
             if(codeRetour!=PKT_OK){
+              fprintf(stderr, "first\n" );
               fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
             }
             pkt_t* pktforLen=node_get_data(toSend);
@@ -158,7 +165,7 @@ void read_write_loop(int sfd,int fdEntree) {
             }
             //totalLengthwSfd+=length;
 
-            memset(reader,0,528);
+            memset(reader,0,512);
             memset(charAEnvoyer,0,528);
             length=0;
             toSend=toSend->next;
@@ -174,7 +181,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
               while(toSend!=finWind){
 
-                int length=read(0,reader,528);
+                int length=read(fdEntree,reader,512);
                 if(length==0)
                 {
                   destroy_list(current);
@@ -186,6 +193,8 @@ void read_write_loop(int sfd,int fdEntree) {
                 node_set_data(toSend,pkt_new());
 
                 if(create_packet(reader,length,31,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
+                  fprintf(stderr, "second\n" );
+
                   fprintf(stderr, "====erreure lors du create_packet" );
                   return;
                 }
@@ -216,7 +225,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 }
                 //totalLengthwSfd+=length;
 
-                memset(reader,0,528);
+                memset(reader,0,512);
                 memset(charAEnvoyer,0,528);
                 length=0;
                 toSend=toSend->next;
