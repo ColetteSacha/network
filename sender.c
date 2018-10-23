@@ -121,10 +121,14 @@ void read_write_loop(int sfd,int fdEntree) {
 
             //todo: METTRE LE CHAR DS UN pkt(node_get_data(current[0]))
             pkt_t *un=pkt_new();
+            fprintf(stderr, "====size du reader: %ld\n",sizeof(reader) );
+            fprintf(stderr, "====size de length: %d\n",length );
 
-            pkt_status_code status= create_packet(reader,sizeof(reader),32,numeroDeSequence,0,un);
+            pkt_status_code status= create_packet(reader,length,31,numeroDeSequence,0,un);
             if(status!=PKT_OK){
-              fprintf(stderr, "====erreure lors du create_packet" );
+              fprintf(stderr, "====erreure lors du create_packet\n" );
+
+              fprintf(stderr, "%d\n", status);
               return;
             }
             node_set_data(toSend,un);
@@ -179,7 +183,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
                 node_set_data(toSend,pkt_new());
 
-                if(create_packet(reader,sizeof(reader),32,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
+                if(create_packet(reader,length,31,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
                   fprintf(stderr, "====erreure lors du create_packet" );
                   return;
                 }
