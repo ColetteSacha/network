@@ -17,39 +17,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <arpa/inet.h>
 #include <zlib.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
+
+#include "create_socket.h"
 #include "packet_interface.h"
 #include "node.h"
+#include "real_address.h"
 
-
-
-
-
-
-
-//Avec l'aide de Vahid Beyraghi et Jonathan Thibaut
-/* Loop reading a socket and printing to stdout,
-   * while reading stdin and writing to the socket
-   * @sfd: The socket file descriptor. It is both bound and connected.
-   * @return: as soon as stdin signals EOF
-   */
-
-
-
-   int premierMessage=1;
-   int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
-   int wmax=31;
-   int notSendOnes=1;
-   node_t *current;
-   node_t *toSend;
-   int numeroDeSequence=0;
-
-
+int premierMessage=1;
+int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
+int wmax=31;
+int notSendOnes=1;
+node_t *current;
+node_t *toSend;
+int numeroDeSequence=0;
 
 
 
@@ -60,10 +49,9 @@
      pkt_t* paquetAEnvoyer=noeudAenvoyer->data;
 
      char charAEnvoyer[528];
-     size_t *l;
-     *l=528*sizeof(char);
+     size_t l=528*sizeof(char);
 
-     pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,l);
+     pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,&l);
      if(codeRetour!=PKT_OK){
        fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
      }
@@ -145,10 +133,9 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
             char charAEnvoyer[528];
-            size_t *l;
-            *l=528*sizeof(char);
+            size_t l=528*sizeof(char);
 
-            pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,l);
+            pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&l);
             if(codeRetour!=PKT_OK){
               fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
             }
@@ -202,10 +189,9 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
                 char charAEnvoyer[528];
-                size_t *len;
-                *len=528*sizeof(char);
+                size_t len=528*sizeof(char);
 
-                pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,len);
+                pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&len);
                 //!!!!!!!!!!!!!pas paquet AEnvoyer ms packet ds current!!!!!!!!!!!!!!!!!!!
 
 
@@ -282,7 +268,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 else{//grace aux acquis cumulatifs, on sait que tous les paquets ont bien été recu
 // jusqu'au numéro de séquence recu
                     int* nbrAdecaler=malloc(sizeof(int));
-                    pkt_status_code codeDeRetour=difference(wmin,wmax,pkt_get_seqnum(paquetDecode),nbrAdecaler);
+                    difference(wmin,wmax,pkt_get_seqnum(paquetDecode),nbrAdecaler);
                     for(int i=0;i<*nbrAdecaler;i++){
 
 
@@ -304,4 +290,70 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
     }//fin du while
+}
+
+
+
+
+
+
+void sender(int sfd, char* nomFichier){
+  int fd;
+  if(nomFichier==NULL){
+    fd=1;
+  }
+  else{
+    fd=open(nomFichier,O_RDONLY);
+
+  }
+  if(fd == -1){
+		fprintf(stderr, "erreur dans l'ouverture du fichier d'entree\n");
+		exit(EXIT_FAILURE); // il faut voir les consignes
+	}
+  read_write_loop(sfd, fd);
+  int f = close(fd);
+	if(fd == -1){
+		fprintf(stderr, "erreur dans la fermeture du fichier d'entrée\n");
+	}
+	return;
+
+}
+
+
+
+int main(int argc, char *argv[]){
+ int opt;
+ int port;
+ char* nomFichier=NULL;
+ char* hostName;
+ while((opt = getopt(argc, argv, "f:")) != -1){
+   switch(opt){
+     case 'f':
+     nomFichier = optarg;
+     break;
+
+     default:
+     fprintf(stderr,"option inconnue");
+     return -1;
+   }
+ }
+ hostName=argv[optind];
+ port=atoi(argv[optind+1]);
+
+struct sockaddr_in6 addr;
+const char *err=real_address(hostName,&addr);
+if(err){
+  fprintf(stderr, "Could not resolve hostname %s: %s\n", hostName, err);
+  return EXIT_FAILURE;
+}
+int sfd=create_socket(NULL,-1,&addr,port);/* Connected */
+if(sfd<0){
+  fprintf(stderr, "Failed to create the socket!\n");
+  return EXIT_FAILURE;
+}
+
+
+
+
+
 }

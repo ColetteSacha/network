@@ -31,9 +31,9 @@
 
 
 /*
-la fonction place dans renvoi le paquet ACK ou NACK qui devra être renvoyé. 
+la fonction place dans renvoi le paquet ACK ou NACK qui devra être renvoyé.
 Si la fonction renvoit autre chose que PKT_OK le paquet doit être ignoré
-recu est le paquet recu du socket et auquel il faut répondre, window est 
+recu est le paquet recu du socket et auquel il faut répondre, window est
 la taille de la fenetre actuel du receveur. timestamp n'est pas encore défini
 */
 
@@ -110,15 +110,15 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
 
 //Avec l'aide de Louis Colin et Jonathan Thibaut
-/* 
+/*
 la fonction lit sur le socket et calcul le paquet qu'il faut répondre
 ACK ou NACK. Si la fonction renvoie autre chose que PKT_OK, le paquet recu
-doit être ignoré. 
-sdf est le file descripteur du socket lu. pkt est le paquet de réponse 
+doit être ignoré.
+sdf est le file descripteur du socket lu. pkt est le paquet de réponse
 */
-            
 
-            
+
+
 pkt_status_code read_write_loop(int sfd, int fd) {
     char reader[528];
     int seqnumDebut = 0;
@@ -171,6 +171,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             	if(pkt_get_type(renvoi) == PTYPE_NACK){//le message recu était tronqué
             		pkt_encode(renvoi, renvoiChar, &taille);//12
             		write(sfd, renvoiChar, 12);
+								pkt_del(recu);
             	}
             	if(pkt_get_type(renvoi) == PTYPE_ACK){
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
@@ -180,6 +181,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
             			pkt_encode(renvoi, renvoiChar, &taille);//12
             			write(sfd, renvoiChar, 12);
+									pkt_del(renvoi);
             			while(node_get_data(current) != NULL){//vide buf
             				pkt_t* videBuffer = node_get_data(current);
             				write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
@@ -202,6 +204,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			runner = current;
   	         			pkt_encode(renvoi, renvoiChar, &taille); //12
   	         			write(sfd, renvoiChar, 12);
+									pkt_del(renvoi);
   	         		}
             	}
             }
@@ -213,15 +216,21 @@ destroy_list(runner);
 
 
 
-         
+
 
 
 /*
 lit le socket, renvoie un ACK ou NACK, écrit sur l'entrée standard et dans le fichier
 */
 void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
+ int fd;
+ if(nomFichier==NULL){
+	 fd=1;
+ }
+ else{
+	 fd = open(nomFichier, O_WRONLY);
+ }
 
-	int fd = open(nomFichier, O_WRONLY);
 	if(fd == -1){
 		fprintf(stderr, "erreur dans l'ouverture du fichier de sortie\n");
 		exit(EXIT_FAILURE); // il faut voir les consignes
@@ -229,7 +238,7 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 
 	pkt_status_code status;
 	status = read_write_loop(sfd, fd);
-	
+
 	int f = close(fd);
 	if(fd == -1){
 		fprintf(stderr, "erreur dans la fermeture du fichier de sortie\n");
@@ -241,7 +250,7 @@ void recever(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 int main(int argc, char *argv[]){
 int opt;
 int port;
-char* nomFichier;
+char* nomFichier=NULL;
 char* hostName;
 	while((opt = getopt(argc, argv, "f:")) != -1)
 	{
@@ -264,7 +273,7 @@ char* hostName;
 			close(sfd);
 			return EXIT_FAILURE;
 		}
-	
+
 	if (sfd < 0) {
 		fprintf(stderr, "Failed to create the socket!\n");
 		return EXIT_FAILURE;
@@ -275,5 +284,3 @@ char* hostName;
 	close(sfd);
 	return EXIT_SUCCESS;
 }
-
-
