@@ -10,6 +10,7 @@ typedef struct chrono chrono_t;
 
 struct chrono{
 struct timeval temps;
+struct timeval tempsMax;
 int seqnum;
 
 };
@@ -25,6 +26,8 @@ int chrono_get_seqnum(chrono_t *chrono);
 void chrono_set_seqnum(chrono_t *chrono,int seq);
 
 void chrono_set_time(chrono_t *chrono);
+
+int chrono_is_ok(chrono_t *chrono);
 
 struct timeval chrono_get_currentTime(chrono_t* chrono);
 
