@@ -6,12 +6,11 @@
 
 
 
-chrono_t* chrono_new(int seq){
+chrono_t* chrono_new(){
   chrono_t* ret=malloc(sizeof(chrono_t));
   if(ret==NULL){
   	return NULL;
   	}
-    ret->seqnum=seq;
   return ret;
 
 }
@@ -23,13 +22,7 @@ void chrono_del(chrono_t *chrono) {
 struct timeval chrono_get_temps(chrono_t *chrono){
   return chrono->temps;
 }
-int chrono_get_seqnum(chrono_t *chrono){
-  return chrono->seqnum;
-}
 
-void chrono_set_seqnum(chrono_t *chrono,int seq){
-  chrono->seqnum=seq;
-}
 
 /*
 démarre le chorno. Temps max est la durée maximale avant une retransmission du paquet
@@ -45,8 +38,8 @@ vérifie si la limite maximale du chrono n'est pas dépassée
 return 1 si tout va bien
 return 0 si la limite est dépassée
 */
-int chrono_is_ok(chrono){
-	return chrono_get_currentTime < chrono->tempsMax;
+int chrono_is_ok(chrono_t *chrono){
+	return chrono_get_currentTime(chrono).tv_sec <= (chrono->tempsMax).tv_sec;//!!!!!!!!!!
 }
 
 
@@ -59,6 +52,14 @@ struct timeval chrono_get_currentTime(chrono_t* chrono){
   ret.tv_usec=maintenant.tv_usec-celuici.tv_usec;
   return ret;
 }
+
+/*void chrono_set_temps(chrono_t *chrono){
+  struct timeval tempzero;
+  tempzero.tv_sec=0;
+  tempzero.tv_usec=0;
+  chrono->temps=tempzero;
+}
+*/
 
 /*chrono_t** create_tab_chrono(int numb){
   chrono_t* ret[numb];

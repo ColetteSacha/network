@@ -11,21 +11,20 @@ typedef struct chrono chrono_t;
 struct chrono{
 struct timeval temps;
 struct timeval tempsMax;
-int seqnum;
 
 };
 
 
-chrono_t* chrono_new(int seq);
+chrono_t* chrono_new();
 
 void chrono_del(chrono_t *chrono);
 
 struct timeval chrono_get_temps(chrono_t *chrono);
-int chrono_get_seqnum(chrono_t *chrono);
 
-void chrono_set_seqnum(chrono_t *chrono,int seq);
+//void chrono_set_temps(chrono_t *chrono);
 
-void chrono_set_time(chrono_t *chrono);
+
+void chrono_set_time(chrono_t *chrono,struct timeval max);
 
 int chrono_is_ok(chrono_t *chrono);
 

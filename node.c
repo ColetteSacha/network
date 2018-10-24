@@ -22,9 +22,11 @@
 
 node_t* new_node(){
   node_t *ret=(node_t*)calloc(1,sizeof(node_t));
+
   if(ret==NULL){
       return NULL;
   }
+  chrono_t* chro=chrono_new();
   return ret;
 }
 
@@ -32,7 +34,7 @@ node_t* new_node(){
 void node_del(node_t* n){
   if(n!=NULL){
     if(n->data!=NULL){
-      pkt_del(n->data);
+      pkt_del(node_get_data(n));
     }
     if(n->chrono!=NULL){
       chrono_del(n->chrono);
@@ -50,8 +52,8 @@ void node_set_next(node_t *node,node_t* newNext){
   node->next=newNext;
 }
 
-void node_set_chrono(node_t *node){//réinitialise le temps d'un chrono
-  chrono_set_time(node->chrono);
+void node_set_chrono(node_t *node, struct timeval max){//réinitialise le temps d'un chrono
+  chrono_set_time(node->chrono, max);
 }
 
 pkt_t* node_get_data(node_t *node){
@@ -84,17 +86,20 @@ void destroy_list(node_t* current){
 
 node_t* create_empty_list(int number)
 {
+  int seqnum=0;
 
-  node_t* ret=new_node();
+  node_t* ret=new_node(i);
 
   if(number==1){
     return ret;
   }
   node_t*current=ret;
+  seqnum++;
   for(int i=1;i<number;i++){
-    node_t* new=new_node();
+    node_t* new=new_node(sequnum);
     current->next=new;
     current=current->next;
+    seqnum++;
   }
   current->next=ret;
   return ret;

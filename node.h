@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include "time.h"
+#include "packet_interface.h"
 
 //ATEENTION, INCLUDE LE TRUC DES PKT
 
@@ -21,10 +22,10 @@ chrono_t* chrono;
 
 
 node_t* new_node();
-void node_del();
+void node_del(node_t* n);
 void node_set_data(node_t *node,pkt_t *new);
-void node_set_next();
-void node_set_chrono(node_t *node);
+void node_set_next(node_t *node,node_t* newNext);
+void node_set_chrono(node_t *node,struct timeval max);
 pkt_t* node_get_data(node_t *node);
 node_t* node_get_next(node_t *node);
 chrono_t* node_get_chrono(node_t *node);
