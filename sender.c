@@ -42,6 +42,12 @@ node_t *finWind;
 int numeroDeSequence=0;
 
 
+struct timeval retransmissionTimer; 
+struct timeval premierTimer; // retransmission timer pour le premier paquet
+premierMessage.tv_sec = 5;
+premierMessage.tv_usec = 0;
+
+
 
 
    int resend(int numseq,int sfd){
@@ -56,6 +62,14 @@ int numeroDeSequence=0;
      if(codeRetour!=PKT_OK){
        fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
      }
+
+     if(premierMessage){
+      chrono_set_time(node_get_chrono(noeudAenvoyer), premierTimer); // réinitialise le chrono si c'est le premier message
+     }
+     else{
+      chrono_set_time(node_get_chrono(noeudAenvoyer), retransmissionTimer);//réinitialise le chrono 
+     }
+
 
 
      if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
@@ -80,6 +94,7 @@ void read_write_loop(int sfd,int fdEntree) {
     current=create_empty_list(62);
     toSend=current;
     finWind=find_node(current,0,31,31);
+    node_t runner = current;
 
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
@@ -88,6 +103,7 @@ void read_write_loop(int sfd,int fdEntree) {
     char writer[12];//12 octets nn? pas 528 vu que ps de payload ni crc2
     memset(reader,0,528);
     memset(writer,0,12);
+
 
 
     while(1)
@@ -154,7 +170,9 @@ void read_write_loop(int sfd,int fdEntree) {
             }
             pkt_t* pktforLen=node_get_data(toSend);
 
-            //creation chrono_t
+            chrono_set_time(node_get_chrono(toSend), premierTimer); // démarre le chrono
+
+
 
             if(write(sfd,charAEnvoyer,16+pkt_get_length(pktforLen))!=16+pkt_get_length(pktforLen))
             {
@@ -215,6 +233,8 @@ void read_write_loop(int sfd,int fdEntree) {
                   fprintf(stderr, "====erreure lors de l'encodage du paquet\n");
                 }
 
+
+                chrono_set_time(node_get_chrono(toSend), retransmissionTimer); // démarre le chrono
 
                 if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
                 {
@@ -277,6 +297,11 @@ void read_write_loop(int sfd,int fdEntree) {
                 premierMessage=0;
                 current=current->next;
                 finWind=finWind->next;
+                wmin++;
+                wmax++;
+
+                retransmissionTimer = chrono_get_currentTime(current); //calcul du retransmission timer
+                retransmissionTimer.tv_sec = retransmissionTimer.tv_sec+2;
 
 
               }
@@ -295,9 +320,16 @@ void read_write_loop(int sfd,int fdEntree) {
                       pkt_del(node_get_data(current));
                       current=current->next;
                       finWind=finWind->next;
+                      wmin++;
+                      wmax++;
+                      if(wmin==255){
+                        wmin=0;
+                      }
+                      if(wmax==255){
+                        wmax=0;
+                      }
                     }
-                    wmin=wmin+*nbrAdecaler;//déplace la fenetre
-                    wmax=wmax+*nbrAdecaler;
+                    
                     pkt_del(paquetDecode);
                     free(nbrAdecaler);
                 }
@@ -307,10 +339,29 @@ void read_write_loop(int sfd,int fdEntree) {
         }//fin de la lecture du sfd
 
 
+        pkt_t* renvoi;
 
+        if(premier){
+          if(!chorno_is_ok(node_get_chrono(current))){
+            renvoi = node_get_data(current);
+            resend(pkt_get_seqnum(renvoi), sdf);
+          }
+        }
 
-
-
+        for(int i = wmin; i!=wmax, i++){
+          if(!chorno_is_ok(node_get_chrono(runner))){
+            renvoi = node_get_data(runner);
+            resend(pkt_get_seqnum(renvoi), sfd); //si le chrono est dépassé le paquet est réenvoyé
+            runner = node_get_next(runner);
+            if(wmin == 256){
+              wmin = 0;
+            }
+            if(wmax == 256){
+              wmax = 0;
+            }
+          }
+        }
+        runner = current;
     }//fin du while
 }
 
@@ -385,3 +436,4 @@ close(sfd);
 
 
 }
+
