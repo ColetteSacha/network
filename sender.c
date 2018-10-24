@@ -46,8 +46,7 @@ int numeroDeSequence=0;
 
 struct timeval retransmissionTimer; 
 struct timeval premierTimer; // retransmission timer pour le premier paquet
-premierTimer.tv_sec = 5;
-premierTimer.tv_usec = 0;
+
 
 
 
@@ -96,6 +95,8 @@ void read_write_loop(int sfd,int fdEntree) {
     current=create_empty_list(62);
     toSend=current;
     finWind=find_node(current,0,31,31);
+    premierTimer.tv_sec = 5;
+    premierTimer.tv_usec = 0;
 
     runner = current;
 
