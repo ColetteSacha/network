@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include "time.h"
+
 //ATEENTION, INCLUDE LE TRUC DES PKT
 
 
@@ -13,6 +15,7 @@
 typedef struct node {
 pkt_t *data;
 struct node *next;
+chrono_t* chrono;
 }node_t;
 
 
@@ -21,8 +24,10 @@ node_t* new_node();
 void node_del();
 void node_set_data(node_t *node,pkt_t *new);
 void node_set_next();
+void node_set_chrono(node_t *node);
 pkt_t* node_get_data(node_t *node);
 node_t* node_get_next(node_t *node);
+chrono_t* node_get_chrono(node_t *node);
 node_t* create_empty_list(int number);
 void destroy_list(node_t* current);
 pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage);

@@ -7,9 +7,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #include "packet_interface.h"
 #include "node.h"
+#include "time.h"
 
 
 
@@ -32,6 +34,9 @@ void node_del(node_t* n){
     if(n->data!=NULL){
       pkt_del(n->data);
     }
+    if(n->chrono!=NULL){
+      chrono_del(n->chrono);
+    }
     free(n);
     n=NULL;
   }
@@ -45,12 +50,20 @@ void node_set_next(node_t *node,node_t* newNext){
   node->next=newNext;
 }
 
+void node_set_chrono(node_t *node){//réinitialise le temps d'un chrono
+  chrono_set_time(node->chrono);
+}
+
 pkt_t* node_get_data(node_t *node){
   return node->data;
 }
 
 node_t* node_get_next(node_t *node){
   return node->next;
+}
+
+chrono_t* node_get_chrono(node_t *node){
+  return node->chrono;
 }
 
 void destroy_list(node_t* current){

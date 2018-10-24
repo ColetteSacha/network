@@ -190,7 +190,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 }
                 //totalLengthr+=length;
 
-                node_set_data(toSend,pkt_new());
+                node_set_data(toSend,pkt_new());//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
                 if(create_packet(reader,length,31,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
                   fprintf(stderr, "second\n" );
@@ -241,6 +241,9 @@ void read_write_loop(int sfd,int fdEntree) {
         }//fin de l'envoi ds la possibilité de la window
       }//fin du fait qu'on a la possibilité de lecture du stdin ou fichier
         //reste todo
+
+
+
 
         if (fds[1].revents & POLLIN){
             int length=read(sfd, writer, 12);
@@ -302,6 +305,7 @@ void read_write_loop(int sfd,int fdEntree) {
             }//fin du else qui regarde si le le paquet est de type ack
 
         }//fin de la lecture du sfd
+
 
 
 
