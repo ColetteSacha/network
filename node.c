@@ -86,20 +86,17 @@ void destroy_list(node_t* current){
 
 node_t* create_empty_list(int number)
 {
-  int seqnum=0;
 
-  node_t* ret=new_node(i);
+  node_t* ret=new_node();
 
   if(number==1){
     return ret;
   }
   node_t*current=ret;
-  seqnum++;
   for(int i=1;i<number;i++){
-    node_t* new=new_node(sequnum);
+    node_t* new=new_node();
     current->next=new;
     current=current->next;
-    seqnum++;
   }
   current->next=ret;
   return ret;

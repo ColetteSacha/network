@@ -31,6 +31,7 @@
 #include "packet_interface.h"
 #include "node.h"
 #include "real_address.h"
+#include "time.h"
 
 int premierMessage=1;
 int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
@@ -39,13 +40,14 @@ int notSendOnes=1;
 node_t *current;
 node_t *toSend;
 node_t *finWind;
+node_t* runner;
 int numeroDeSequence=0;
 
 
 struct timeval retransmissionTimer; 
 struct timeval premierTimer; // retransmission timer pour le premier paquet
-premierMessage.tv_sec = 5;
-premierMessage.tv_usec = 0;
+premierTimer.tv_sec = 5;
+premierTimer.tv_usec = 0;
 
 
 
@@ -94,7 +96,9 @@ void read_write_loop(int sfd,int fdEntree) {
     current=create_empty_list(62);
     toSend=current;
     finWind=find_node(current,0,31,31);
-    node_t runner = current;
+
+    runner = current;
+
 
     //int totalLengthr=0;
     //int totalLengthwSfd=0;
@@ -300,7 +304,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 wmin++;
                 wmax++;
 
-                retransmissionTimer = chrono_get_currentTime(current); //calcul du retransmission timer
+                retransmissionTimer = chrono_get_currentTime(node_get_chrono(current)); //calcul du retransmission timer
                 retransmissionTimer.tv_sec = retransmissionTimer.tv_sec+2;
 
 
@@ -341,15 +345,15 @@ void read_write_loop(int sfd,int fdEntree) {
 
         pkt_t* renvoi;
 
-        if(premier){
-          if(!chorno_is_ok(node_get_chrono(current))){
+        if(premierMessage){
+          if(!chrono_is_ok(node_get_chrono(current))){
             renvoi = node_get_data(current);
-            resend(pkt_get_seqnum(renvoi), sdf);
+            resend(pkt_get_seqnum(renvoi), sfd);
           }
         }
 
-        for(int i = wmin; i!=wmax, i++){
-          if(!chorno_is_ok(node_get_chrono(runner))){
+        for(int i = wmin; i!=wmax; i++){
+          if(!chrono_is_ok(node_get_chrono(runner))){
             renvoi = node_get_data(runner);
             resend(pkt_get_seqnum(renvoi), sfd); //si le chrono est dépassé le paquet est réenvoyé
             runner = node_get_next(runner);
