@@ -44,7 +44,7 @@ node_t* runner;
 int numeroDeSequence=0;
 
 
-struct timeval retransmissionTimer; 
+struct timeval retransmissionTimer;
 struct timeval premierTimer; // retransmission timer pour le premier paquet
 
 
@@ -68,7 +68,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
       chrono_set_time(node_get_chrono(noeudAenvoyer), premierTimer); // réinitialise le chrono si c'est le premier message
      }
      else{
-      chrono_set_time(node_get_chrono(noeudAenvoyer), retransmissionTimer);//réinitialise le chrono 
+      chrono_set_time(node_get_chrono(noeudAenvoyer), retransmissionTimer);//réinitialise le chrono
      }
 
 
@@ -128,6 +128,7 @@ void read_write_loop(int sfd,int fdEntree) {
         }
         if ((fds[0].revents & POLLIN))
         {
+          fprintf(stderr, "===l131\n" );
           if(premierMessage && notSendOnes){//si c'est le premier message, on ne doit pas tout envoyer d'un coup
             notSendOnes=0;
 
@@ -144,6 +145,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
             //todo: METTRE LE CHAR DS UN pkt(node_get_data(current[0]))
             pkt_t *un=pkt_new();
+            fprintf(stderr, "===l48\n" );
 
 
             pkt_status_code status= create_packet(reader,length,31,numeroDeSequence,0,un);
@@ -334,7 +336,7 @@ void read_write_loop(int sfd,int fdEntree) {
                         wmax=0;
                       }
                     }
-                    
+
                     pkt_del(paquetDecode);
                     free(nbrAdecaler);
                 }
@@ -441,4 +443,3 @@ close(sfd);
 
 
 }
-

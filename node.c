@@ -27,6 +27,7 @@ node_t* new_node(){
       return NULL;
   }
   chrono_t* chro=chrono_new();
+  ret->chrono=chro;
   return ret;
 }
 
