@@ -145,8 +145,9 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 	runner = current;
 	size_t taille = 12;
 
-    while(deconnection && (tailleBuffer==0))
+    while(!(deconnection && (tailleBuffer==0)))
     {
+			printf("===l150\n" );
         struct pollfd fds;
         pkt_t* renvoi;
         renvoi = pkt_new(); // ne pas oublier de free
@@ -160,6 +161,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
         }
 
         if (fds.revents & POLLIN){
+					printf("receiver recoit qq ch\n");
             memset(reader,0,528);
             int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512%s) + header(16)
 						printf("===length=%d\n", length);
@@ -194,6 +196,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
             		pkt_encode(renvoi, renvoiChar, &taille);//12
             		write(sfd, renvoiChar, 12);
+								printf("le message recu était tronqué\n" );
 								pkt_del(recu);
             	}
             	if(pkt_get_type(renvoi) == PTYPE_ACK){
@@ -204,6 +207,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			//write(1, pkt_get_payload(recu), pkt_get_length(recu));
             			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
             			pkt_encode(renvoi, renvoiChar, &taille);//12
+									printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
             			write(sfd, renvoiChar, 12);
 									pkt_del(renvoi);
             			while(node_get_data(current) != NULL){//vide buf
@@ -214,6 +218,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				//write(sfd, renvoiChar, 12);
             				seqnumDebut = seqnumDebut + 1;
             				seqnumFin = seqnumFin + 1;
+
             				node_set_data(current, NULL);
             				current = node_get_next(current);
             				runner = current;
@@ -228,6 +233,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			node_set_data(runner, recu);
   	         			runner = current;
   	         			pkt_encode(renvoi, renvoiChar, &taille); //12
+									printf("pas tronque mais seqnum pas correct\n");
   	         			write(sfd, renvoiChar, 12);//pk?????????????????????????????????????????
 									pkt_del(renvoi);
 									tailleBuffer++;
