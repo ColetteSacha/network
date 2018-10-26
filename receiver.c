@@ -136,6 +136,8 @@ pkt_status_code read_write_loop(int sfd, int fd) {
     int seqnumDebut = 0;
     int seqnumFin = 31;
     int* decalage;
+		int deconnection = 0;
+		int tailleBuffer = 0;
     decalage = malloc(sizeof(int));
 	node_t* current;
 	node_t* runner;
@@ -143,7 +145,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 	runner = current;
 	size_t taille = 12;
 
-    while(1)
+    while(deconnection && (tailleBuffer==0))
     {
         struct pollfd fds;
         pkt_t* renvoi;
@@ -169,10 +171,9 @@ pkt_status_code read_write_loop(int sfd, int fd) {
                 //return E_UNCONSISTENT;
             }
 
-            if(length < 528){//fin du programme
+            if(length == 12){//fin du programme
 							printf("normalement, fin du while receiver\n" );
-
-                return PKT_OK;
+							deconnection = 1;
             }
 
             pkt_t* recu = pkt_new();
@@ -217,9 +218,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				current = node_get_next(current);
             				runner = current;
             				pkt_del(videBuffer);
+										tailleBuffer--;
             			}
   	         		}
-  	         		else{
+  	         		else{// pas tronqué mais le seqnum n'est pas correct
   	         			for(int i = 0; i<*decalage-1; i++){
   	         				runner = node_get_next(runner);
   	         			}
@@ -228,6 +230,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			pkt_encode(renvoi, renvoiChar, &taille); //12
   	         			write(sfd, renvoiChar, 12);//pk?????????????????????????????????????????
 									pkt_del(renvoi);
+									tailleBuffer++;
   	         		}
             	}
             }
