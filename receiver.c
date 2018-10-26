@@ -159,16 +159,18 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
         if (fds.revents & POLLIN){
             memset(reader,0,528);
-            int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512) + header(16)
+            int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512%s) + header(16)
+						printf("===length=%d\n", length);
             if(length<12)//la taille est plus petite que le header
             {
+							  printf("length<12\n" );
                 fprintf(stderr,"ERROR: %s\n", strerror(errno)); // il faut ignorer le fichier
                 fprintf(stderr,"Erreur read socket\n");
                 //return E_UNCONSISTENT;
             }
 
-            if(length <= 0){//fin du programme
-							fprintf(stderr, "normalement, fin du while receiver\n" );
+            if(length < 528){//fin du programme
+							printf("normalement, fin du while receiver\n" );
 
                 return PKT_OK;
             }
