@@ -51,40 +51,40 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
 
 
-   int resend(int numseq,int sfd){
-     printf("===resend\n" );
+    int resend(int numseq,int sfd){
+      printf("===resend\n" );
 
-     node_t* noeudAenvoyer=find_node(current,wmin,wmax,numseq);
-     pkt_t* paquetAEnvoyer=node_get_data(noeudAenvoyer);
-      if(pkt_get_length(paquetAEnvoyer)==0){
-        char charAEnvoyer[12];
-        size_t l=12*sizeof(char);
-        pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,&l);
-        if(codeRetour!=PKT_OK){
-          printf("====erreure lors de l'encodage du paquet\n");
-        }
+      node_t* noeudAenvoyer=find_node(current,wmin,wmax,numseq);
+      pkt_t* paquetAEnvoyer=node_get_data(noeudAenvoyer);
+        if(pkt_get_length(paquetAEnvoyer)==0){
+          char charAEnvoyer[12];
+          size_t l=12*sizeof(char);
+          pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,&l);
+          if(codeRetour!=PKT_OK){
+            printf("====erreure lors de l'encodage du paquet\n");
+          }
 
-        int *nbrIteration=malloc(sizeof(int));
-        difference(wmin,wmax,numseq,nbrIteration);
-        node_t* NoeudTimeReset=current;
-        for(int i=0;i<*nbrIteration;i++){
-          current=node_get_next(current);
-        }
-
-
-       chrono_set_time(node_get_chrono(current), retransmissionTimer);//réinitialise le chrono
-       current=NoeudTimeReset;
-       free(nbrIteration);
+          int *nbrIteration=malloc(sizeof(int));
+          difference(wmin,wmax,numseq,nbrIteration);
+          node_t* NoeudTimeReset=current;
+          for(int i=0;i<*nbrIteration;i++){
+            current=node_get_next(current);
+          }
 
 
+          chrono_set_time(node_get_chrono(current), retransmissionTimer);//réinitialise le chrono
+          current=NoeudTimeReset;
+          free(nbrIteration);
 
 
-       if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
-       {
-          destroy_list(current);
-           printf("ERROR: %s\n", strerror(errno));
-           printf("Erreur write sfd\n");
-           return 0;
+
+
+          if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+          {
+            destroy_list(current);
+            printf("ERROR: %s\n", strerror(errno));
+            printf("Erreur write sfd\n");
+            return 0;
        }
      memset(charAEnvoyer,0,528);
      printf("===resend fin\n" );
@@ -160,7 +160,7 @@ void read_write_loop(int sfd,int fdEntree) {
     premierTimer.tv_sec = 5;
     premierTimer.tv_usec = 0;
     int deconnection=0;
-
+    int countDeconnection=0;
     int finLecture = 0;
     int seqnumDeconnection=-1;
 
@@ -467,9 +467,18 @@ void read_write_loop(int sfd,int fdEntree) {
           }
         }
         else{
+
           runner = current;
           for(int i = wmin; i!=wmax; i++){
             if(!chrono_is_ok(node_get_chrono(runner))&& node_get_data(runner)!=NULL){
+              printf("sender===countDeconnection=%d\n",countDeconnection );
+              if(pkt_get_length(node_get_data(runner))==0){
+                countDeconnection++;
+              }
+              if(countDeconnection==4){
+                destroy_list(current);
+                return;
+              }
               renvoi = node_get_data(runner);
               printf("===renvoi du à la clock\n" );
               printf("===seqnum de renvoi=%d\n", pkt_get_seqnum(renvoi));
