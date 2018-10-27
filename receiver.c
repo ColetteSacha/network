@@ -240,9 +240,9 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         		}
             	}
             }
-					//	else{
-
-						//}
+						else{
+							printf("receiver: probleme stat: %d\n",stat );
+						}
 
         }
     }
