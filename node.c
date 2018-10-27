@@ -117,14 +117,14 @@ pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* deca
   if(seqnumDebut%256<seqnumFin%256){
 
         if(!(seqnum>=seqnumDebut && seqnum<=seqnumFin)){// !!!! avant seqnum>seqnumDebut
-            return E_SEQNUM;
+            return E_WINDOW;
         }
         *decalage = (seqnum%256) - (seqnumDebut%256);
     }
     if(seqnumDebut%256>seqnumFin%256){
         if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
 
-            return E_SEQNUM;
+            return E_WINDOW;
         }
         if((seqnum%256)>(seqnumDebut%256)){
             *decalage = (seqnum%256)-(seqnumDebut%256);

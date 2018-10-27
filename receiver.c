@@ -74,18 +74,21 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
 
 
-    if(stat != PKT_OK){
+    //if(stat != PKT_OK){
 
-    	return stat;
-    }
+    	//return stat;
+    //}
 
     int tr = pkt_get_tr(recu);
-
     pkt_set_tr(renvoi, 0);
-
-	pkt_set_window(renvoi, window);
-	pkt_set_length(renvoi, 0);
-	pkt_set_timestamp(renvoi, timestamp);
+		pkt_set_window(renvoi, window);
+		pkt_set_length(renvoi, 0);
+		pkt_set_timestamp(renvoi, timestamp);
+		if(stat==E_WINDOW){
+			pkt_set_seqnum(renvoi,seqnumDebut);
+			pkt_set_type(renvoi,PTYPE_ACK);
+			return E_WINDOW;
+		}
 
 
     if(*decalage != 0){//*decalage =! 0
@@ -241,7 +244,9 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             	}
             }
 						else{
-							printf("receiver: probleme stat: %d\n",stat );
+							pkt_encode(renvoi, renvoiChar, &taille);//12
+							printf("le message est de type E_WINDOW Seqnum=%d\n", pkt_get_seqnum(renvoi));
+							write(sfd, renvoiChar, 12);
 						}
 
         }
