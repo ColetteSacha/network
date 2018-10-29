@@ -46,31 +46,15 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
 	uint8_t seqnum = pkt_get_seqnum(recu);
 
-	if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
-		return E_SEQNUM;
-	}
+	// if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
+		// return E_SEQNUM;
+	// }
 
 
-    /*if(seqnumDebut%256<seqnumFin%256){
-        if(!(seqnum>seqnumDebut && seqnum<seqnumFin)){// le sequnum n'est est dans les limites acceptables
-            return E_SEQNUM;
-        }
-        decalage = (seqnum%256) - (seqnumDebut%256);
-    }
-    if(seqnumDebut%256>seqnumFin%256){
-        if(!(seqnum<seqnumDebut || seqnum>seqnumFin)){
-            return E_SEQNUM;
-        }
-        if((seqnum%256)>(seqnumDebut%256)){
-            decalage = (seqnum%256)-(seqnumDebut%256);
-        }
-        else{
-            decalage = (seqnum%256) + (256 - (seqnumDebut%256));
-        }
-    }*/
+
 
     pkt_status_code stat = difference(seqnumDebut, seqnumFin, seqnum, decalage);
-		pkt_status_code te=E_WINDOW;
+
 
 
 
@@ -120,6 +104,7 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
     	}
     }
+		return PKT_OK;
 }
 
 
@@ -198,8 +183,16 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             	if(pkt_get_type(renvoi) == PTYPE_NACK){//le message recu était tronqué
 
             		pkt_encode(renvoi, renvoiChar, &taille);//12
-            		write(sfd, renvoiChar, 12);
+            		if(write(sfd, renvoiChar, 12)!=12){
+									pkt_del(renvoi);
+									pkt_del(recu);
+									destroy_list(runner);
+									free(decalage);
+									printf("Erreur write sfd\n");
+	                exit(EXIT_FAILURE);
+								}
 								printf("le message recu était tronqué\n" );
+								pkt_del(renvoi);
 								pkt_del(recu);
             	}
             	if(pkt_get_type(renvoi) == PTYPE_ACK){
@@ -207,18 +200,39 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
             			seqnumDebut = seqnumDebut+1;
             			seqnumFin = seqnumFin+1;
-            			//write(1, pkt_get_payload(recu), pkt_get_length(recu));
-            			write(fd, pkt_get_payload(recu), pkt_get_length(recu));
+
+            			if(write(fd, pkt_get_payload(recu), pkt_get_length(recu))!=pkt_get_length(recu)){
+										pkt_del(renvoi);
+										pkt_del(recu);
+										destroy_list(runner);
+										free(decalage);
+										printf("Erreur write sfd\n");
+		                exit(EXIT_FAILURE);
+									}
+
             			pkt_encode(renvoi, renvoiChar, &taille);//12
 									printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
-            			write(sfd, renvoiChar, 12);
+									if(write(sfd, renvoiChar, 12)!=12){
+										pkt_del(renvoi);
+										pkt_del(recu);
+										destroy_list(runner);
+										free(decalage);
+										printf("Erreur write sfd\n");
+		                exit(EXIT_FAILURE);
+									}
 									pkt_del(renvoi);
+									pkt_del(recu);
             			while(node_get_data(current) != NULL){//vide buf
             				pkt_t* videBuffer = node_get_data(current);
             				//write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
-            				write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
-            				//encode(videBuffer, renvoiChar, 12);
-            				//write(sfd, renvoiChar, 12);
+            				if(write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer))!=pkt_get_length(videBuffer)){
+											pkt_del(renvoi);
+											pkt_del(recu);
+											destroy_list(runner);
+											free(decalage);
+											printf("Erreur write sfd\n");
+			                exit(EXIT_FAILURE);
+										}
             				seqnumDebut = seqnumDebut + 1;
             				seqnumFin = seqnumFin + 1;
 
@@ -237,8 +251,16 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			runner = current;
   	         			pkt_encode(renvoi, renvoiChar, &taille); //12
 									printf("pas tronque mais seqnum pas correct\n");
-  	         			write(sfd, renvoiChar, 12);//pk?????????????????????????????????????????
+									if(write(sfd, renvoiChar, 12)!=12){
+										pkt_del(renvoi);
+										pkt_del(recu);
+										destroy_list(runner);
+										free(decalage);
+										printf("Erreur write sfd\n");
+		                exit(EXIT_FAILURE);
+									}
 									pkt_del(renvoi);
+									pkt_del(recu);
 									tailleBuffer++;
   	         		}
             	}
@@ -246,12 +268,23 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 						else{
 							pkt_encode(renvoi, renvoiChar, &taille);//12
 							printf("le message est de type E_WINDOW Seqnum=%d\n", pkt_get_seqnum(renvoi));
-							write(sfd, renvoiChar, 12);
+							if(write(sfd, renvoiChar, 12)!=12){
+								pkt_del(renvoi);
+								pkt_del(recu);
+								destroy_list(runner);
+								free(decalage);
+								printf("Erreur write sfd\n");
+								exit(EXIT_FAILURE);
+							}
+							pkt_del(recu);
+							pkt_del(renvoi);
 						}
 
         }
     }
+		free(decalage);
 destroy_list(runner);
+return (PKT_OK);
 }
 
 
@@ -279,9 +312,11 @@ void receiver(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 
 	pkt_status_code status;
 	status = read_write_loop(sfd, fd);
+	if(status!=PKT_OK){
+		exit(EXIT_FAILURE);
+	}
 
-	int f = close(fd);
-	if(fd == -1){
+	if(close(fd)<0){
 		fprintf(stderr, "erreur dans la fermeture du fichier de sortie\n");
 	}
 	return;
