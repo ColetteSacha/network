@@ -86,7 +86,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
             printf("Erreur write sfd\n");
             return 0;
        }
-     memset(charAEnvoyer,0,528);
+     memset(charAEnvoyer,0,12);
      printf("===resend fin\n" );
 
      return 1;
@@ -161,7 +161,7 @@ void read_write_loop(int sfd,int fdEntree) {
     premierTimer.tv_usec = 0;
     int deconnection=0;
     int countDeconnection=0;
-    int finLecture = 0;
+    //int finLecture = 0;
     int seqnumDeconnection=-1;
 
     runner = current;
@@ -172,9 +172,9 @@ void read_write_loop(int sfd,int fdEntree) {
     //int totalLengthw=0;
     char reader[512];
     char writer[12];//12 octets nn? pas 528 vu que ps de payload ni crc2
-    memset(reader,0,528);
+    memset(reader,0,512);
     memset(writer,0,12);
-    printf( "===l111 sender\n" );
+
 
 
 
@@ -274,7 +274,7 @@ void read_write_loop(int sfd,int fdEntree) {
                   //fin du fichier
                   printf("fin du fichier - sender\n");
                   deconnection=1;
-                  finLecture = 1;
+                  //finLecture = 1;
                   seqnumDeconnection = numeroDeSequence;
                   printf("seqnumDeconnection=%d\n", seqnumDeconnection);
                   pkt_t* pkt_disconnect = pkt_new();
@@ -289,7 +289,11 @@ void read_write_loop(int sfd,int fdEntree) {
                     printf("erreur dans l'encodage du paquet de déconnection\n");
                     return;
                   }
-                  write(sfd, pktChar, len2);
+                  if(write(sfd, pktChar, len2)!=12*sizeof(char)){
+                     destroy_list(current);
+                     printf("Erreur write sfd\n");
+                     return;
+                  }
                   chrono_set_time(node_get_chrono(toSend), retransmissionTimer);
                   printf("sender===retransmissionTimer=%ld\n", retransmissionTimer.tv_sec);
                   int r=node_get_data(runner)==NULL;
@@ -331,7 +335,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
                   if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
                   {
-                     destroy_list(current);
+                      destroy_list(current);
                       printf("Erreur write sfd\n");
                       return;
                   }
@@ -476,6 +480,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 countDeconnection++;
               }
               if(countDeconnection==4){
+
                 destroy_list(current);
                 return;
               }
@@ -521,7 +526,7 @@ void sender(int sfd, char* nomFichier){
 
   read_write_loop(sfd, fd);
   int f = close(fd);
-	if(fd == -1){
+	if(f == -1){
 		printf( "erreur dans la fermeture du fichier d'entrée\n");
 	}
 	return;
