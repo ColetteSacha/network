@@ -32,7 +32,6 @@
 #include "node.h"
 #include "real_address.h"
 #include "time.h"
-
 int premierMessage=1;
 int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
 int wmax=31;
@@ -509,7 +508,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
 
-void sender(int sfd, char* nomFichier){
+void sender2(int sfd, char* nomFichier){
   int fd;
   if(nomFichier==NULL){
     fd=0;
@@ -535,7 +534,7 @@ void sender(int sfd, char* nomFichier){
 
 
 
-int main(int argc, char *argv[]){
+int sender(int argc, char *argv[]){
   printf("ligne326:ok\n" );
 
  int opt;
@@ -578,8 +577,8 @@ if(sfd<0){
 printf("ligne447:ok\n" );
 
 printf( "debut du sender\n" );
-sender(sfd,nomFichier);
+sender2(sfd,nomFichier);
 close(sfd);
-
+return EXIT_SUCCESS;
 
 }

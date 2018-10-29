@@ -296,7 +296,7 @@ return (PKT_OK);
 /*
 lit le socket, renvoie un ACK ou NACK, écrit sur l'entrée standard et dans le fichier
 */
-void receiver(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
+void receiver2(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
  int fd;
  if(nomFichier==NULL){
 	 fd=1;
@@ -323,7 +323,7 @@ void receiver(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 
 }
 
-int main(int argc, char *argv[]){
+int receiver(int argc, char *argv[]){
 int opt;
 int port;
 char* nomFichier=NULL;
@@ -355,7 +355,7 @@ char* hostName;
 		return EXIT_FAILURE;
 	}
 	/* Process I/O */
-	receiver(sfd, nomFichier);
+	receiver2(sfd, nomFichier);
 
 	close(sfd);
 	return EXIT_SUCCESS;
