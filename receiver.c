@@ -22,9 +22,11 @@
 #include "create_socket.h"
 #include "real_address.h"
 
+//note: les exercices inginious on été réalisé avec l'aide de Guillaume Bellon
+//et Vahid Beyraghi
+
 
 //optind
-
 
 
 

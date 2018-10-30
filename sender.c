@@ -32,6 +32,13 @@
 #include "node.h"
 #include "real_address.h"
 #include "time.h"
+
+
+//note: les exercices inginious on été réalisé avec l'aide de Guillaume Bellon
+//et Vahid Beyraghi
+
+
+
 int premierMessage=1;
 int wmin=0;//la fenetre du sender est caractérisee par un numéro de début et de fin
 int wmax=31;
