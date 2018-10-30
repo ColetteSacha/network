@@ -193,7 +193,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 									pkt_del(recu);
 									destroy_list(runner);
 									free(decalage);
-									printf("Erreur write sfd\n");
+									printf("Erreur write sfd r1\n");
 	                exit(EXIT_FAILURE);
 								}
 								printf("le message recu était tronqué\n" );
@@ -217,7 +217,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 										pkt_del(recu);
 										destroy_list(runner);
 										free(decalage);
-										printf("Erreur write sfd\n");
+										printf("Erreur write sfd r2\n");
 		                exit(EXIT_FAILURE);
 									}
 
@@ -228,7 +228,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 										pkt_del(recu);
 										destroy_list(runner);
 										free(decalage);
-										printf("Erreur write sfd\n");
+										printf("Erreur write sfd r3\n");
 		                exit(EXIT_FAILURE);
 									}
 									pkt_del(renvoi);
@@ -241,7 +241,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 											pkt_del(recu);
 											destroy_list(runner);
 											free(decalage);
-											printf("Erreur write sfd\n");
+											printf("Erreur write sfd r4\n");
 			                exit(EXIT_FAILURE);
 										}
             				seqnumDebut = seqnumDebut + 1;
