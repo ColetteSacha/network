@@ -101,6 +101,9 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
 				//signal correct et bon num de séquence, on renvoi un ack avec le prochain seqnum attendu
     		pkt_set_type(renvoi, PTYPE_ACK);
+    		if(seqnum == 255){
+    			seqnum = -1;
+    		}
     		pkt_set_seqnum(renvoi, seqnum+1);
     		return PKT_OK;
 
@@ -175,7 +178,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             }
 
             char renvoiChar[12];
-            stat = reponse(recu, renvoi, 31, 0, seqnumDebut, seqnumFin, decalage);
+            stat = reponse(recu, renvoi, 31, pkt_get_timestamp(recu), seqnumDebut, seqnumFin, decalage);
 
 
 
@@ -202,6 +205,12 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
             			seqnumDebut = seqnumDebut+1;
             			seqnumFin = seqnumFin+1;
+            			if(seqnumDebut == 256){
+            				seqnumDebut = 0;
+            			}
+            			if(seqnumFin == 256){
+            				seqnumFin = 0;
+            			}
 
             			if(write(fd, pkt_get_payload(recu), pkt_get_length(recu))!=pkt_get_length(recu)){
 										pkt_del(renvoi);
@@ -237,6 +246,12 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 										}
             				seqnumDebut = seqnumDebut + 1;
             				seqnumFin = seqnumFin + 1;
+            				if(seqnumDebut == 256){
+            					seqnumDebut = 0;
+            				}
+            				if(seqnumFin == 256){
+            					seqnumFin = 0;
+            				}
 
             				node_set_data(current, NULL);
             				current = node_get_next(current);
