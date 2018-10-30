@@ -515,7 +515,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
 
 
-void sender2(int sfd, char* nomFichier){
+void sender(int sfd, char* nomFichier){
   int fd;
   if(nomFichier==NULL){
     fd=0;
@@ -541,7 +541,7 @@ void sender2(int sfd, char* nomFichier){
 
 
 
-int sender(int argc, char *argv[]){
+int main(int argc, char *argv[]){
   printf("ligne326:ok\n" );
 
  int opt;
@@ -584,7 +584,7 @@ if(sfd<0){
 printf("ligne447:ok\n" );
 
 printf( "debut du sender\n" );
-sender2(sfd,nomFichier);
+sender(sfd,nomFichier);
 close(sfd);
 return EXIT_SUCCESS;
 
