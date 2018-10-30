@@ -89,7 +89,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
           {
             destroy_list(current);
             printf("ERROR: %s\n", strerror(errno));
-            printf("Erreur write sfd\n");
+            printf("Erreur write sfd(s1)\n");
             return 0;
        }
      memset(charAEnvoyer,0,12);
@@ -141,7 +141,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
        {
           destroy_list(current);
            printf("ERROR: %s\n", strerror(errno));
-           printf("Erreur write sfd\n");
+           printf("Erreur write sfd(s2)\n");
            return 0;
        }
      memset(charAEnvoyer,0,528);
@@ -252,7 +252,7 @@ void read_write_loop(int sfd,int fdEntree) {
             if(write(sfd,charAEnvoyer,16+pkt_get_length(pktforLen))!=16+pkt_get_length(pktforLen))
             {
                 destroy_list(current);
-                printf("Erreur write sfd\n");
+                printf("Erreur write sfd(s3)\n");
                 return;
             }
             //totalLengthwSfd+=length;
@@ -297,7 +297,7 @@ void read_write_loop(int sfd,int fdEntree) {
                   }
                   if(write(sfd, pktChar, len2)!=12*sizeof(char)){
                      destroy_list(current);
-                     printf("Erreur write sfd\n");
+                     printf("Erreur write sfd(s4)\n");
                      return;
                   }
                   chrono_set_time(node_get_chrono(toSend), retransmissionTimer);
@@ -342,7 +342,7 @@ void read_write_loop(int sfd,int fdEntree) {
                   if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
                   {
                       destroy_list(current);
-                      printf("Erreur write sfd\n");
+                      printf("Erreur write sfd(s5)\n");
                       return;
                   }
                   //totalLengthwSfd+=length;
@@ -429,7 +429,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 if(pkt_get_seqnum(paquetDecode)==wmin){//le seqnum n'est pas celui attendu
                   printf("seqnum n'est pas celui attendu donc rese,d\n" );
                   resend(pkt_get_seqnum(paquetDecode),sfd);
-                  pkt_del(paquetDecode);
+
                 }
 
                 if(pkt_get_seqnum(paquetDecode) == seqnumDeconnection+1){//la demande de deconnection a été recue
@@ -457,10 +457,10 @@ void read_write_loop(int sfd,int fdEntree) {
                         wmax=0;
                       }
                     }
-
-                    pkt_del(paquetDecode);
                     free(nbrAdecaler);
                 }
+                pkt_del(paquetDecode);
+
               }//fin du else qui regarde si le numéro de seq est celui attendu
             }//fin du else qui regarde si le le paquet est de type ack
 
