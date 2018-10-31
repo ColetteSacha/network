@@ -16,12 +16,8 @@ LDFLAGS= -lz
 all: sender receiver
 
 sender: sender.o packet_implem.o create_socket.o real_address.o node.o time.o $(LDFLAGS)
-	
 
-receiver: receiver.o packet_implem.o real_address.o create_socket.o time.o  wait_for_client.o $(LDFLAGS)
-		
-
-
+receiver: receiver.o packet_implem.o real_address.o create_socket.o time.o node.o wait_for_client.o $(LDFLAGS)
 
 clean:
 	@rm -f sender sender.o read_write_loop.o create_socket.o real_address.o wait_for_client.o node.o packet_implem.o time.o receiver receiver.o
