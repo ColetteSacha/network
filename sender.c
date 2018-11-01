@@ -263,12 +263,14 @@ void read_write_loop(int sfd,int fdEntree) {
             memset(charAEnvoyer,0,528);
             length=0;
             toSend=node_get_next(toSend);
-
+            printf("fin de l envoi du premierMessage\n");
           }
 
 
 
+
           else{
+            printf("je suis dans le else\n");
             //printf("l198 debut du else\n");
             if(!premierMessage){
 
@@ -276,7 +278,7 @@ void read_write_loop(int sfd,int fdEntree) {
               //pkt_t* chekeWindow=node_get_data(toSend);//!!!!
 
               while(toSend!=finWind && !deconnection){
-
+                printf("l279\n");
                 int length=read(fdEntree,reader,512);
                 printf("lecture : bytes lu = %d\n", length);
                 printf("deconnection = %d\n", deconnection);
@@ -361,14 +363,18 @@ void read_write_loop(int sfd,int fdEntree) {
               }//fin du while
           }
         }//fin de l'envoi ds la possibilité de la window
+      printf("ligne 364\n");
       }//fin du fait qu'on a la possibilité de lecture du stdin ou fichier
         //reste todo
+      printf("fin de la partie envoi\n");
 
 
 
 
         if (fds[1].revents & POLLIN){
+          printf("debut de la lecture sur le sfd\n");
             int length=read(sfd, writer, 12);
+            printf("lecture sur le sfd bytes lus = %d\n", length);
             if(length<=0)
             {
               printf("fin de la lecture l274 - sender\n");
@@ -502,7 +508,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
           runner = current;
         }
-
+printf("fin du while\n");
 
     }//fin du while
 }
