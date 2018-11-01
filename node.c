@@ -126,7 +126,7 @@ pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* deca
 
             return E_WINDOW;
         }
-        if((seqnum%256)>(seqnumDebut%256)){
+        if((seqnum%256)>=(seqnumDebut%256)){
             *decalage = (seqnum%256)-(seqnumDebut%256);
         }
         else{

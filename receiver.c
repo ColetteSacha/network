@@ -56,8 +56,10 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 
 
     pkt_status_code stat = difference(seqnumDebut, seqnumFin, seqnum, decalage);
-
-
+    printf("receiver seqnumDebut = %d\n", seqnumDebut);
+    printf("receiver seqnumFin = %d\n", seqnumFin);
+    printf("receiver seqnum = %d\n", seqnum);
+    printf("receiver difference = %d\n", *decalage);
 
 
     //if(stat != PKT_OK){
@@ -140,7 +142,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
     while(!(deconnection && (tailleBuffer==0)))
     {
-			printf("===l150\n" );
+		printf("===l150\n" );
         struct pollfd fds;
         pkt_t* renvoi;
         renvoi = pkt_new(); // ne pas oublier de free
@@ -313,7 +315,7 @@ return (PKT_OK);
 /*
 lit le socket, renvoie un ACK ou NACK, écrit sur l'entrée standard et dans le fichier
 */
-void receiver(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
+void receiver2(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
  int fd;
  if(nomFichier==NULL){
 	 fd=1;
@@ -372,8 +374,9 @@ char* hostName;
 		return EXIT_FAILURE;
 	}
 	/* Process I/O */
-	receiver(sfd, nomFichier);
+	receiver2(sfd, nomFichier);
 
 	close(sfd);
 	return EXIT_SUCCESS;
 }
+
