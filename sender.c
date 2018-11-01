@@ -264,13 +264,46 @@ void read_write_loop(int sfd,int fdEntree) {
             length=0;
             toSend=node_get_next(toSend);
             printf("fin de l envoi du premierMessage\n");
+            if(length<512){//on envoie le paquet de déconnexion
+              //fin du fichier
+              printf("fin du fichier - sender\n");
+              deconnection=1;
+              //finLecture = 1;
+              seqnumDeconnection = numeroDeSequence;
+              printf("seqnumDeconnection=%d\n", seqnumDeconnection);
+              pkt_t* pkt_disconnect = pkt_new();
+              if(create_packet(NULL, 0, 1, numeroDeSequence, 0, pkt_disconnect) != PKT_OK){
+                  printf("erreur dans la création du paquet de déconnection\n");
+                  return;
+              }//vérifier le numéro de séquencd
+              node_set_data(toSend, pkt_disconnect);
+              char pktChar[12];
+              size_t len2 = 12*sizeof(char);
+              if(pkt_encode(pkt_disconnect, pktChar, &len2) != PKT_OK){
+                printf("erreur dans l'encodage du paquet de déconnection\n");
+                return;
+              }
+              if(write(sfd, pktChar, len2)!=12*sizeof(char)){
+                 destroy_list(current);
+                 printf("Erreur write sfd(s4)\n");
+                 return;
+              }
+              chrono_set_time(node_get_chrono(toSend), retransmissionTimer);
+              printf("sender===retransmissionTimer=%ld\n", retransmissionTimer.tv_sec);
+              int r=node_get_data(runner)==NULL;
+              printf("sender===node_get_data(runner)==NULL ===%d\n",r);
+              printf("numero de sequence de toSend: %d\n", pkt_get_seqnum(node_get_data(toSend)));
+              printf("numero de sequence de runner: %d\n", pkt_get_seqnum(node_get_data(runner)));
+              numeroDeSequence++;
+              toSend=node_get_next(toSend);
+            }
           }
 
 
 
 
           else{
-            printf("je suis dans le else\n");
+            //printf("je suis dans le else\n");
             //printf("l198 debut du else\n");
             if(!premierMessage){
 
@@ -363,10 +396,10 @@ void read_write_loop(int sfd,int fdEntree) {
               }//fin du while
           }
         }//fin de l'envoi ds la possibilité de la window
-      printf("ligne 364\n");
+
       }//fin du fait qu'on a la possibilité de lecture du stdin ou fichier
         //reste todo
-      printf("fin de la partie envoi\n");
+      //printf("fin de la partie envoi\n");
 
 
 
@@ -508,7 +541,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
           runner = current;
         }
-printf("fin du while\n");
+
 
     }//fin du while
 }
