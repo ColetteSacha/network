@@ -1,4 +1,4 @@
- #include <netinet/in.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <sys/types.h>
@@ -261,12 +261,12 @@ void read_write_loop(int sfd,int fdEntree) {
 
             memset(reader,0,512);
             memset(charAEnvoyer,0,528);
-            length=0;
+            //length=0;
             toSend=node_get_next(toSend);
-            printf("fin de l envoi du premierMessage\n");
+            printf("fin de l envoi du premierMessage LENGTH = %d\n", length);
             if(length<512){//on envoie le paquet de déconnexion
               //fin du fichier
-              printf("fin du fichier - sender\n");
+              printf("fin du fichier - sender1\n");
               deconnection=1;
               //finLecture = 1;
               seqnumDeconnection = numeroDeSequence;
@@ -361,7 +361,7 @@ void read_write_loop(int sfd,int fdEntree) {
                 if(length<512)
                 {
                   //fin du fichier
-                  printf("fin du fichier - sender\n");
+                  printf("fin du fichier - sender2\n");
                   deconnection=1;
                   //finLecture = 1;
                   seqnumDeconnection = numeroDeSequence;
@@ -423,7 +423,6 @@ void read_write_loop(int sfd,int fdEntree) {
                 //fprintf(stderr,"Fin du programme");
                 return;
             }
-
             */
 
             pkt_t* paquetDecode=pkt_new();//attention, a pkt_del() a la fin du programme
@@ -561,17 +560,17 @@ void sender(int sfd, char* nomFichier){
 
   }
   if(fd == -1){
-		printf( "erreur dans l'ouverture du fichier d'entree\n");
-		exit(EXIT_FAILURE); // il faut voir les consignes
-	}
+    printf( "erreur dans l'ouverture du fichier d'entree\n");
+    exit(EXIT_FAILURE); // il faut voir les consignes
+  }
   printf( "debut du read_write_loop\n" );
 
   read_write_loop(sfd, fd);
   int f = close(fd);
-	if(f == -1){
-		printf( "erreur dans la fermeture du fichier d'entrée\n");
-	}
-	return;
+  if(f == -1){
+    printf( "erreur dans la fermeture du fichier d'entrée\n");
+  }
+  return;
 
 }
 
