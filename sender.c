@@ -319,7 +319,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
                   memset(reader,0,512);
                   memset(charAEnvoyer,0,528);
-                  length=0;
+                  //length=0;
                   toSend=node_get_next(toSend);
                 }
 
