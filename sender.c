@@ -168,7 +168,7 @@ void read_write_loop(int sfd,int fdEntree) {
     int deconnection=0;
     int countDeconnection=0;
     //int finLecture = 0;
-    int seqnumDeconnection=-1;
+    int seqnumDeconnection=-2;
 
     runner = current;
 
@@ -288,6 +288,7 @@ void read_write_loop(int sfd,int fdEntree) {
                       printf("erreur dans la création du paquet de déconnection\n");
                       return;
                   }//vérifier le numéro de séquencd
+                  pkt_del(node_get_data(toSend));
                   node_set_data(toSend, pkt_disconnect);
                   char pktChar[12];
                   size_t len2 = 12*sizeof(char);
@@ -311,7 +312,8 @@ void read_write_loop(int sfd,int fdEntree) {
 
                 }
 
-                else{
+                else{   	
+                	pkt_del(node_get_data(toSend));
                   node_set_data(toSend,pkt_new());//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
                   if(create_packet(reader,length,31,numeroDeSequence,0,node_get_data(toSend))!=PKT_OK){
@@ -404,7 +406,6 @@ void read_write_loop(int sfd,int fdEntree) {
               printf("sender: sequnumDeconnection = %d\n", seqnumDeconnection);
               if(premierMessage){//si la lecture était le premier message
                 pkt_del(paquetDecode);
-                pkt_del(node_get_data(current));
                 premierMessage=0;
                 printf("premier message recu\n" );
                 retransmissionTimer = chrono_get_currentTime(node_get_chrono(current)); //calcul du retransmission timer
@@ -422,22 +423,27 @@ void read_write_loop(int sfd,int fdEntree) {
               else{//on cheke si le numéro de séquence recu est celui attendu
                 if(pkt_get_seqnum(paquetDecode)==seqnumDeconnection+1){
                   printf("sortir de la boucle sender\n" );
-                  pkt_del(paquetDecode);
+                  
+                  printf("debut de destroy_list\n");
                   destroy_list(current);
+                  printf("destroy_list\n");
+                  pkt_del(paquetDecode);
+                  printf("free paquetDecode\n");
+
                   return;
                 }//fin du if envoi de la demande de deconnection
 
                 if(pkt_get_seqnum(paquetDecode)==wmin){//le seqnum n'est pas celui attendu
-                  printf("seqnum n'est pas celui attendu donc rese,d\n" );
+                  printf("seqnum n'est pas celui attendu donc resend\n" );
                   resend(pkt_get_seqnum(paquetDecode),sfd);
 
                 }
 
-                if(pkt_get_seqnum(paquetDecode) == seqnumDeconnection+1){//la demande de deconnection a été recue
+                /*if(pkt_get_seqnum(paquetDecode) == seqnumDeconnection+1){//la demande de deconnection a été recue
                   destroy_list(current);
                   pkt_del(paquetDecode);
                   return;
-                }
+                }*/
 
                 else{//grace aux acquis cumulatifs, on sait que tous les paquets ont bien été recu
 // jusqu'au numéro de séquence recu
@@ -449,15 +455,15 @@ void read_write_loop(int sfd,int fdEntree) {
                     for(int i=0;i<*nbrAdecaler;i++){
 
 
-                      pkt_del(node_get_data(current));
+
                       current=node_get_next(current);
                       finWind=node_get_next(finWind);
                       wmin++;
                       wmax++;
-                      if(wmin==255){
+                      if(wmin==256){
                         wmin=0;
                       }
-                      if(wmax==255){
+                      if(wmax==256){
                         wmax=0;
                       }
                     }
