@@ -101,8 +101,8 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
       }
       else{
-        char charAEnvoyer[528];
-        size_t l=528*sizeof(char);
+        char charAEnvoyer[(int)pkt_get_length(paquetAEnvoyer)+16];
+        size_t l=((int)pkt_get_length(paquetAEnvoyer)+16)*sizeof(char);
 
 
        pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,&l);
@@ -137,7 +137,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
 
 
-       if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+       if(write(sfd,charAEnvoyer,l)!=(int)l)
        {
           destroy_list(current);
            printf("ERROR: %s\n", strerror(errno));
@@ -236,8 +236,8 @@ void read_write_loop(int sfd,int fdEntree) {
             numeroDeSequence++;
 
 
-            char charAEnvoyer[528];
-            size_t l=528*sizeof(char);
+            char charAEnvoyer[length+16];
+            size_t l=(length+16)*sizeof(char);
 
             pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&l);
             if(codeRetour!=PKT_OK){
@@ -325,8 +325,8 @@ void read_write_loop(int sfd,int fdEntree) {
                   }
 
 
-                  char charAEnvoyer[528];
-                  size_t len=528*sizeof(char);
+                  char charAEnvoyer[length+16];
+                  size_t len=(length+16)*sizeof(char);
 
                   pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&len);
                   //!!!!!!!!!!!!!pas paquet AEnvoyer ms packet ds current!!!!!!!!!!!!!!!!!!!
@@ -339,7 +339,7 @@ void read_write_loop(int sfd,int fdEntree) {
 
                   chrono_set_time(node_get_chrono(toSend), retransmissionTimer); // démarre le chrono
 
-                  if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+                  if(write(sfd,charAEnvoyer,len)!=(int)len)
                   {
                       destroy_list(current);
                       printf("Erreur write sfd(s5)\n");
