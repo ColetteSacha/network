@@ -101,8 +101,8 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
       }
       else{
-        char charAEnvoyer[528];
-        size_t l=528*sizeof(char);
+        char charAEnvoyer[pkt_get_length(paquetAEnvoyer)+16];
+        size_t l=(pkt_get_length(paquetAEnvoyer)+16)*sizeof(char);
 
 
        pkt_status_code codeRetour=pkt_encode(paquetAEnvoyer,charAEnvoyer,&l);
@@ -137,14 +137,14 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
 
 
-       if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+       if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=(int)sizeof(charAEnvoyer))
        {
           destroy_list(current);
            printf("ERROR: %s\n", strerror(errno));
            printf("Erreur write sfd(s2)\n");
            return 0;
        }
-     memset(charAEnvoyer,0,528);
+     memset(charAEnvoyer,0,(pkt_get_length(paquetAEnvoyer)+16));
      printf("===resend fin\n" );
 
      return 1;
@@ -160,7 +160,7 @@ struct timeval premierTimer; // retransmission timer pour le premier paquet
 
 void read_write_loop(int sfd,int fdEntree) {
     int ret=-1;
-    current=create_empty_list(62);
+    current=create_empty_list(61);
     toSend=current;
     finWind=find_node(current,0,31,31);
     premierTimer.tv_sec = 5;
@@ -236,8 +236,8 @@ void read_write_loop(int sfd,int fdEntree) {
             numeroDeSequence++;
 
 
-            char charAEnvoyer[528];
-            size_t l=528*sizeof(char);
+            char charAEnvoyer[16+length];
+            size_t l=(16+length)*sizeof(char);
 
             pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&l);
             if(codeRetour!=PKT_OK){
@@ -258,7 +258,7 @@ void read_write_loop(int sfd,int fdEntree) {
             //totalLengthwSfd+=length;
 
             memset(reader,0,512);
-            memset(charAEnvoyer,0,528);
+            memset(charAEnvoyer,0,(16+length));
             length=0;
             toSend=node_get_next(toSend);
 
@@ -327,8 +327,8 @@ void read_write_loop(int sfd,int fdEntree) {
                   }
 
 
-                  char charAEnvoyer[528];
-                  size_t len=528*sizeof(char);
+                  char charAEnvoyer[16+length];
+                  size_t len=(16+length)*sizeof(char);
 
                   pkt_status_code codeRetour=pkt_encode(node_get_data(toSend),charAEnvoyer,&len);
                   //!!!!!!!!!!!!!pas paquet AEnvoyer ms packet ds current!!!!!!!!!!!!!!!!!!!
@@ -342,7 +342,7 @@ void read_write_loop(int sfd,int fdEntree) {
                   chrono_set_time(node_get_chrono(toSend), retransmissionTimer); // démarre le chrono
                   printf("===sender numero de seq envoi=%d\n", pkt_get_seqnum(node_get_data(toSend)));
 
-                  if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=sizeof(charAEnvoyer))
+                  if(write(sfd,charAEnvoyer,sizeof(charAEnvoyer))!=(int)sizeof(charAEnvoyer))
                   {
                       destroy_list(current);
                       printf("Erreur write sfd(s5)\n");
@@ -351,7 +351,7 @@ void read_write_loop(int sfd,int fdEntree) {
                   //totalLengthwSfd+=length;
 
                   memset(reader,0,512);
-                  memset(charAEnvoyer,0,528);
+                  memset(charAEnvoyer,0,(16+length));
                   length=0;
                   toSend=node_get_next(toSend);
                 }
