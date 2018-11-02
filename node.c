@@ -19,7 +19,9 @@
 
 
 
-
+/*
+crée un nouveau noeud en lui allouant de la mémoire
+*/
 node_t* new_node(){
   node_t *ret=(node_t*)calloc(1,sizeof(node_t));
 
@@ -32,6 +34,10 @@ node_t* new_node(){
 }
 
 
+/*
+supprime un noeud en désalouant la mémoire qui lui avait été attribuée
+n est le noeud qu'on supprime
+*/
 void node_del(node_t* n){
   if(n!=NULL){
     if(n->data!=NULL){
@@ -69,6 +75,11 @@ chrono_t* node_get_chrono(node_t *node){
   return node->chrono;
 }
 
+
+/*
+supprime un liste entière de noeud en désallouant la mémoire qui avait été attribuée
+current est un des noeud de la liste qu'on supprime
+*/
 void destroy_list(node_t* current){
   node_t* runner = current;
   while(current != node_get_next(current)){
@@ -80,11 +91,10 @@ void destroy_list(node_t* current){
   node_del(current);
 }
 
-
-
-
-
-
+/*
+crée une liste vide de number noeud
+number est le nombre de noeud dans la liste qu'on crée
+*/
 node_t* create_empty_list(int number)
 {
 
@@ -106,13 +116,13 @@ node_t* create_empty_list(int number)
 
 
 
-
-
+/*
+calcul le décalage entre le seqnumDebut et le seqnum. Retourne un PKT_OK si seqnum se trouve dans la fenêtre
+définie par seqnumDebut et seqnumFin. Sinon retourne un E_WINDOW.
+le décalage se récupère avec le pointeur decalage
+*/
 
 pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* decalage){
-
-
-
 
   if(seqnumDebut%256<seqnumFin%256){
 
@@ -136,6 +146,11 @@ pkt_status_code difference(int seqnumDebut, int seqnumFin, int seqnum, int* deca
     return PKT_OK;
 }
 
+
+/*
+retourne le noeud dans une liste de noeud à la place place
+current est le premier noeud de la liste.
+*/
 node_t* find_node(node_t* current,int wmin,int seqnumFin, int place){
   int *nbrIteration=malloc(sizeof(int));
   difference(wmin,seqnumFin,place,nbrIteration);

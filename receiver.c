@@ -15,7 +15,6 @@
 #include <sys/poll.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include "packet_interface.h"
 #include "node.h"
 #include "wait_for_client.h"
@@ -25,47 +24,22 @@
 //note: les exercices inginious on été réalisé avec l'aide de Guillaume Bellon
 //et Vahid Beyraghi
 
-
-//optind
-
-
-
-
-
 /*
 la fonction place dans renvoi le paquet ACK ou NACK qui devra être renvoyé.
 Si la fonction renvoit autre chose que PKT_OK le paquet doit être ignoré
 recu est le paquet recu du socket et auquel il faut répondre, window est
-la taille de la fenetre actuel du receveur. timestamp n'est pas encore défini
+la taille de la fenetre actuel du receveur. timestamp est la variable timestamp qui sera mise dans le pkt renvoi.
+seqnumDebut et seqnumFin sont les valeurs limite de la window. Décalage est un int* pour permettre de récupérer sa 
+valeur en dehors de la fonction
 */
-
-
-
-
-
 
 pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t timestamp, int seqnumDebut, int seqnumFin, int* decalage){
 
 	uint8_t seqnum = pkt_get_seqnum(recu);
 
-	// if(seqnum >512){//seqnum n'est pas acceptable -> ignoré
-		// return E_SEQNUM;
-	// }
-
-
-
 
     pkt_status_code stat = difference(seqnumDebut, seqnumFin, seqnum, decalage);
-    printf("receiver seqnumDebut = %d\n", seqnumDebut);
-    printf("receiver seqnumFin = %d\n", seqnumFin);
-    printf("receiver seqnum = %d\n", seqnum);
-    printf("receiver difference = %d\n", *decalage);
 
-
-    //if(stat != PKT_OK){
-
-    	//return stat;
-    //}
 
     int tr = pkt_get_tr(recu);
     pkt_set_tr(renvoi, 0);
@@ -118,25 +92,21 @@ pkt_status_code reponse (pkt_t* recu, pkt_t *renvoi, uint8_t window, uint32_t ti
 }
 
 
-
-//Avec l'aide de Louis Colin et Jonathan Thibaut
 /*
-la fonction lit sur le socket et calcul le paquet qu'il faut répondre
-ACK ou NACK. Si la fonction renvoie autre chose que PKT_OK, le paquet recu
-doit être ignoré.
-sdf est le file descripteur du socket lu. pkt est le paquet de réponse
+la fonction lit sur le sfd. Elle decode les paquets et écrit le payload sur
+un fichier ou sur l'entrée standard. Elle renvoi des ACK si le paquet est bien arrivé et
+des NACK si le paquet est arrivé tronqué.
+Au préalable sfd et fd doivent avoir été ouvert
+sfd est le file descriptor du socket et fd le file descriptor du fichier de sortie
 */
-
-
-
 pkt_status_code read_write_loop(int sfd, int fd) {
 	
     char reader[528];
     int seqnumDebut = 0;
     int seqnumFin = 31;
     int* decalage;
-		int deconnection = 0;
-		int tailleBuffer = 0;
+	int deconnection = 0;
+	int tailleBuffer = 0;
     decalage = malloc(sizeof(int));
 	node_t** current=malloc(sizeof(node_t**));
 	*current = (create_empty_list(62)); //2 fois la taille max de la window
@@ -158,22 +128,17 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
         if (fds.revents & POLLIN){
 
-
-					printf("receiver recoit qq ch\n");
             memset(reader,0,528);
             int length=read(sfd, reader, 528); // 528 est la taille totale du payload(512%s) + header(16)
-						printf("===length=%d\n", length);
             if(length<12)//la taille est plus petite que le header
             {
-							  printf("length<12\n" );
                 fprintf(stderr,"ERROR: %s\n", strerror(errno)); // il faut ignorer le fichier
                 fprintf(stderr,"Erreur read socket\n");
                 //return E_UNCONSISTENT;
             }
 
             if(length == 12){//fin du programme
-							printf("normalement, fin du while receiver\n" );
-							deconnection = 1;
+				deconnection = 1;
             }
 
             pkt_t* recu = pkt_new();
@@ -228,7 +193,6 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
 						if(node_get_data(*current) == NULL){
 							pkt_encode(renvoi, renvoiChar, &taille);
-            				printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
 							if(write(sfd, renvoiChar, 12)!=12){
 								pkt_del(renvoi);
 								pkt_del(recu);
@@ -237,20 +201,15 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 								printf("Erreur write sfd r3\n");
 		               			 exit(EXIT_FAILURE);
 							}
-							printf("current avance\n");
-							**current = *(node_get_next(*current));
 
+							**current = *(node_get_next(*current));
 							pkt_del(renvoi);
 							pkt_del(recu);
 						}
 						else{
 							while(node_get_data(*current) != NULL){//vide buf
             				pkt_t* videBuffer = node_get_data(*current);
-            				printf("seqnum du current = %d\n", pkt_get_seqnum(node_get_data(*current)));
-            				//write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				int w=write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
-            				printf("WRITE = %d\n",w );
-            					printf("taille videBuffer=%d\n", pkt_get_length(videBuffer));
             				if(w!=pkt_get_length(videBuffer)){
             					
 											pkt_del(renvoi);
@@ -270,16 +229,12 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				}
 
 
-            				//reponse(node_get_data(current), renvoi, pkt_set_window(node_get_data(current), pkt_get_timestamp(node_get_data(current), seqnumDebut, seqnumFin, 0)))
-            				//renvoi = (node_get_data(current));
-
 
             				if(node_get_data(node_get_next(*current))==NULL){
             					pkt_set_seqnum(renvoi, (pkt_get_seqnum(node_get_data(*current))+1));
             					pkt_set_window(renvoi, pkt_get_window(node_get_data(*current)));
             					pkt_set_timestamp(renvoi, pkt_get_timestamp(node_get_data(*current)));
             					pkt_encode(renvoi, renvoiChar, &taille);
-            					printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
 								if(write(sfd, renvoiChar, 12)!=12){
 									pkt_del(renvoi);
 									pkt_del(recu);
@@ -291,18 +246,13 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
             				}
 
-            				printf("seqnum renvoi=%d\n", pkt_get_seqnum(renvoi));
             				node_set_data(*current, NULL);
             				pkt_del(videBuffer);
-            				printf("current avance\n");
             				**current = *(node_get_next(*current));
             				
             				
 							tailleBuffer--;
-							printf("tailleBuffer-=%d\n",tailleBuffer );
-
-
-
+							
             			}
             			**current=*(node_get_next(*current));
             			pkt_del(renvoi);
@@ -319,21 +269,15 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			for(int i = 0; i<*decalage-1; i++){
   	         				runner = (node_get_next(runner));
   	         			}
-  	         			printf("ajout dans le buffer sequnum = %d , decalage = %d, length du payload=%d\n", pkt_get_seqnum(recu), *decalage,pkt_get_length(recu));
-
+  	         			
   	         			node_set_data(runner, recu); 
-  	         			printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
   	         			pkt_t* seqnumIncorrect=pkt_new();
   	         			pkt_set_seqnum(seqnumIncorrect,seqnumDebut);
   	         			pkt_set_type(seqnumIncorrect,PTYPE_ACK);
   	         			pkt_set_window(seqnumIncorrect, pkt_get_window(recu));
   	         			pkt_set_timestamp(seqnumIncorrect, pkt_get_timestamp(recu));
   	         			pkt_set_length(seqnumIncorrect,0);      			
-  	         			printf(" sequnum du runner tjs bon? = %d , decalage = %d , seqnum du current = %d\n", pkt_get_seqnum(node_get_data(runner)), *decalage, pkt_get_seqnum(node_get_data(*current)));
-  	         			//runner = *current;
   	         			pkt_encode(seqnumIncorrect, renvoiChar, &taille); //12
-									printf("pas tronque mais seqnum pas correct\n");
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
 									if(write(sfd, renvoiChar, 12)!=12){
 										pkt_del(renvoi);
 										pkt_del(recu);
@@ -342,23 +286,14 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 										printf("Erreur write sfd\n");
 		                exit(EXIT_FAILURE);
 									}
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
 									pkt_del(renvoi);
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
-									//pkt_del(recu);
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
 									pkt_del(seqnumIncorrect);
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
 									tailleBuffer++;
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
-									printf("tailleBuffer+=%d\n",tailleBuffer);
-									printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(runner)));
-  	         		}
+	         		}
             	}
             }
 						else{
 							pkt_encode(renvoi, renvoiChar, &taille);//12
-							printf("le message est de type E_WINDOW Seqnum=%d\n", pkt_get_seqnum(renvoi));
 							if(write(sfd, renvoiChar, 12)!=12){
 								pkt_del(renvoi);
 								pkt_del(recu);
@@ -373,8 +308,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
         }
     }
-    printf("le receiver se termine \n");
-		free(decalage);
+free(decalage);
 destroy_list(*current);
 free(current);
 
@@ -382,16 +316,13 @@ free(current);
 return (PKT_OK);
 }
 
-
-
-
-
-
-
 /*
-lit le socket, renvoie un ACK ou NACK, écrit sur l'entrée standard et dans le fichier
+la fonction ouvre le fichier dans lequel il écrira ce qu'il lit sur le sfd
+il appelle la fonction read_write_loop et ferme le fichier après l'écriture
+sfd est le file descriptor du socket et nomFichier le nom du fichier de sortie.
+Pour une sortie sur la sortie standard, nomFichier = 1;
 */
-void receiver2(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
+void receiver2(int sfd, char* nomFichier){
  int fd;
  if(nomFichier==NULL){
 	 fd=1;
@@ -418,6 +349,11 @@ void receiver2(int sfd, char* nomFichier){ //si il n'y a pas de fichier ??
 
 }
 
+
+/*
+fonction main, fait appelle à toutes les fonctions précédente pour recevoir un fichier
+depuis le sfd et l'écrire sur la sortie standard ou dans un fichier
+*/
 int main(int argc, char *argv[]){
 int opt;
 int port;
