@@ -138,10 +138,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 		int deconnection = 0;
 		int tailleBuffer = 0;
     decalage = malloc(sizeof(int));
-	node_t* current;
-	node_t* runner;
-	current = create_empty_list(62); //2 fois la taille max de la window
-	runner = current;
+	node_t** current=malloc(sizeof(node_t**));
+	node_t** runner=malloc(sizeof(node_t**));
+	*current = create_empty_list(62); //2 fois la taille max de la window
+	*runner = *current;
 	size_t taille = 12;
 
     while(!(deconnection && (tailleBuffer==0)))
@@ -198,7 +198,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             		if(write(sfd, renvoiChar, 12)!=12){
 									pkt_del(renvoi);
 									pkt_del(recu);
-									destroy_list(runner);
+									destroy_list(*runner);
 									free(decalage);
 									printf("Erreur write sfd r1\n");
 	                exit(EXIT_FAILURE);
@@ -222,31 +222,31 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             			if(write(fd, pkt_get_payload(recu), pkt_get_length(recu))!=pkt_get_length(recu)){
 										pkt_del(renvoi);
 										pkt_del(recu);
-										destroy_list(runner);
+										destroy_list(*runner);
 										free(decalage);
 										printf("Erreur write sfd r2\n");
 		                exit(EXIT_FAILURE);
 									}
 
-						if(node_get_data(current) == NULL){
+						if(node_get_data(*current) == NULL){
 							pkt_encode(renvoi, renvoiChar, &taille);
             				printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
 							if(write(sfd, renvoiChar, 12)!=12){
 								pkt_del(renvoi);
 								pkt_del(recu);
-								destroy_list(runner);
+								destroy_list(*runner);
 								free(decalage);
 								printf("Erreur write sfd r3\n");
 		               			 exit(EXIT_FAILURE);
 							}
-							current = node_get_next(current);
+							*current = node_get_next(*current);
 							pkt_del(renvoi);
 							pkt_del(recu);
 						}
 						else{
-							while(node_get_data(current) != NULL){//vide buf
-            				pkt_t* videBuffer = node_get_data(current);
-            				printf("seqnum du current = %d\n", pkt_get_seqnum(node_get_data(current)));
+							while(node_get_data(*current) != NULL){//vide buf
+            				pkt_t* videBuffer = node_get_data(*current);
+            				printf("seqnum du current = %d\n", pkt_get_seqnum(node_get_data(*current)));
             				//write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				int w=write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				printf("WRITE = %d\n",w );
@@ -255,7 +255,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             					
 											pkt_del(renvoi);
 											pkt_del(recu);
-											destroy_list(runner);
+											destroy_list(*runner);
 											free(decalage);
 											printf("Erreur write sfd r4\n");
 			                				exit(EXIT_FAILURE);
@@ -274,16 +274,16 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				//renvoi = (node_get_data(current));
 
 
-            				if(node_get_data(node_get_next(current))==NULL){
-            					pkt_set_seqnum(renvoi, (pkt_get_seqnum(node_get_data(current))+1));
-            					pkt_set_window(renvoi, pkt_get_window(node_get_data(current)));
-            					pkt_set_timestamp(renvoi, pkt_get_timestamp(node_get_data(current)));
+            				if(node_get_data(node_get_next(*current))==NULL){
+            					pkt_set_seqnum(renvoi, (pkt_get_seqnum(node_get_data(*current))+1));
+            					pkt_set_window(renvoi, pkt_get_window(node_get_data(*current)));
+            					pkt_set_timestamp(renvoi, pkt_get_timestamp(node_get_data(*current)));
             					pkt_encode(renvoi, renvoiChar, &taille);
             					printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
 								if(write(sfd, renvoiChar, 12)!=12){
 									pkt_del(renvoi);
 									pkt_del(recu);
-									destroy_list(runner);
+									destroy_list(*runner);
 									free(decalage);
 									printf("Erreur write sfd r3\n");
 			               			 exit(EXIT_FAILURE);
@@ -292,10 +292,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				}
 
             				printf("seqnum renvoi=%d\n", pkt_get_seqnum(renvoi));
-            				node_set_data(current, NULL);
+            				node_set_data(*current, NULL);
             				pkt_del(videBuffer);
-            				current = node_get_next(current);
-            				runner = current;
+            				*current = node_get_next(*current);
+            				*runner = *current;
             				
 							tailleBuffer--;
 							printf("tailleBuffer-=%d\n",tailleBuffer );
@@ -313,23 +313,28 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
   	         		}
   	         		else{// pas tronqué mais le seqnum n'est pas correct
-  	         			runner = current;
+  	         			*runner = *current;
   	         			for(int i = 0; i<*decalage-1; i++){
-  	         				runner = node_get_next(runner);
+  	         				*runner = node_get_next(*runner);
   	         			}
   	         			printf("ajout dans le buffer sequnum = %d , decalage = %d, length du payload=%d\n", pkt_get_seqnum(recu), *decalage,pkt_get_length(recu));
-  	         			node_set_data(runner, recu); 
+
+  	         			node_set_data(*runner, recu); 
+  	         			printf("numseq current=%d   numseq runner=%d\n",pkt_get_seqnum(node_get_data(*current)),pkt_get_seqnum(node_get_data(*runner)));
   	         			pkt_t* seqnumIncorrect=pkt_new();
   	         			pkt_set_seqnum(seqnumIncorrect,seqnumDebut);
-  	         			pkt_set_type(seqnumIncorrect,PTYPE_ACK);      			
-  	         			printf(" sequnum du runner tjs bon? = %d , decalage = %d\n", pkt_get_seqnum(node_get_data(runner)), *decalage);
-  	         			runner = current;
+  	         			pkt_set_type(seqnumIncorrect,PTYPE_ACK);
+  	         			pkt_set_window(seqnumIncorrect, pkt_get_window(recu));
+  	         			pkt_set_timestamp(seqnumIncorrect, pkt_get_timestamp(recu));
+  	         			pkt_set_length(seqnumIncorrect,0);      			
+  	         			printf(" sequnum du runner tjs bon? = %d , decalage = %d\n", pkt_get_seqnum(node_get_data(*runner)), *decalage);
+  	         			//runner = *current;
   	         			pkt_encode(seqnumIncorrect, renvoiChar, &taille); //12
 									printf("pas tronque mais seqnum pas correct\n");
 									if(write(sfd, renvoiChar, 12)!=12){
 										pkt_del(renvoi);
 										pkt_del(recu);
-										destroy_list(runner);
+										destroy_list(*runner);
 										free(decalage);
 										printf("Erreur write sfd\n");
 		                exit(EXIT_FAILURE);
@@ -348,7 +353,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 							if(write(sfd, renvoiChar, 12)!=12){
 								pkt_del(renvoi);
 								pkt_del(recu);
-								destroy_list(runner);
+								destroy_list(*runner);
 								free(decalage);
 								printf("Erreur write sfd\n");
 								exit(EXIT_FAILURE);
@@ -361,7 +366,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
     }
     printf("le receiver se termine \n");
 		free(decalage);
-destroy_list(runner);
+destroy_list(*runner);
+
+free(current);
+free(runner);
 return (PKT_OK);
 }
 
