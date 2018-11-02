@@ -306,10 +306,11 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
   	         		}
   	         		else{// pas tronqué mais le seqnum n'est pas correct
+  	         			runner = current;
   	         			for(int i = 0; i<*decalage-1; i++){
   	         				runner = node_get_next(runner);
   	         			}
-  	         			printf("ajout dans le buffer sequnum = %d , decalage = %d\n", pkt_get_seqnum(renvoi), *decalage);
+  	         			printf("ajout dans le buffer sequnum = %d , decalage = %d, length du payload=%d\n", pkt_get_seqnum(renvoi), *decalage,pkt_get_length(renvoi));
   	         			node_set_data(runner, renvoi); 
   	         			pkt_t* seqnumIncorrect=pkt_new();
   	         			pkt_set_seqnum(seqnumIncorrect,seqnumDebut);
