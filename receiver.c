@@ -29,7 +29,7 @@ la fonction place dans renvoi le paquet ACK ou NACK qui devra être renvoyé.
 Si la fonction renvoit autre chose que PKT_OK le paquet doit être ignoré
 recu est le paquet recu du socket et auquel il faut répondre, window est
 la taille de la fenetre actuel du receveur. timestamp est la variable timestamp qui sera mise dans le pkt renvoi.
-seqnumDebut et seqnumFin sont les valeurs limite de la window. Décalage est un int* pour permettre de récupérer sa 
+seqnumDebut et seqnumFin sont les valeurs limite de la window. Décalage est un int* pour permettre de récupérer sa
 valeur en dehors de la fonction
 */
 
@@ -100,7 +100,7 @@ Au préalable sfd et fd doivent avoir été ouvert
 sfd est le file descriptor du socket et fd le file descriptor du fichier de sortie
 */
 pkt_status_code read_write_loop(int sfd, int fd) {
-	
+
     char reader[528];
     int seqnumDebut = 0;
     int seqnumFin = 31;
@@ -170,7 +170,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 								pkt_del(renvoi);
 								pkt_del(recu);
             	}
-            	if(pkt_get_type(renvoi) == PTYPE_ACK){
+            	else{//le message est de type ACK
 
             		if(*decalage == 0){//le message recu n'était pas tronqué et le seqnum est correct, on écrit sur le fichier
             			seqnumDebut = seqnumDebut+1;
@@ -211,7 +211,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				pkt_t* videBuffer = node_get_data(*current);
             				int w=write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				if(w!=pkt_get_length(videBuffer)){
-            					
+
 											pkt_del(renvoi);
 											pkt_del(recu);
 											destroy_list(*current);
@@ -249,10 +249,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				node_set_data(*current, NULL);
             				pkt_del(videBuffer);
             				**current = *(node_get_next(*current));
-            				
-            				
+
+
 							tailleBuffer--;
-							
+
             			}
             			**current=*(node_get_next(*current));
             			pkt_del(renvoi);
@@ -269,14 +269,14 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			for(int i = 0; i<*decalage-1; i++){
   	         				runner = (node_get_next(runner));
   	         			}
-  	         			
-  	         			node_set_data(runner, recu); 
+
+  	         			node_set_data(runner, recu);
   	         			pkt_t* seqnumIncorrect=pkt_new();
   	         			pkt_set_seqnum(seqnumIncorrect,seqnumDebut);
   	         			pkt_set_type(seqnumIncorrect,PTYPE_ACK);
   	         			pkt_set_window(seqnumIncorrect, pkt_get_window(recu));
   	         			pkt_set_timestamp(seqnumIncorrect, pkt_get_timestamp(recu));
-  	         			pkt_set_length(seqnumIncorrect,0);      			
+  	         			pkt_set_length(seqnumIncorrect,0);
   	         			pkt_encode(seqnumIncorrect, renvoiChar, &taille); //12
 									if(write(sfd, renvoiChar, 12)!=12){
 										pkt_del(renvoi);
@@ -292,7 +292,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 	         		}
             	}
             }
-						else{
+						else{//stat!=PKT_OK
 							pkt_encode(renvoi, renvoiChar, &taille);//12
 							if(write(sfd, renvoiChar, 12)!=12){
 								pkt_del(renvoi);
@@ -391,4 +391,3 @@ char* hostName;
 	close(sfd);
 	return EXIT_SUCCESS;
 }
-
