@@ -246,6 +246,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 						else{
 							while(node_get_data(current) != NULL){//vide buf
             				pkt_t* videBuffer = node_get_data(current);
+            				printf("seqnum du current = %d\n", pkt_get_seqnum(node_get_data(current)));
             				//write(1, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				int w=write(fd, pkt_get_payload(videBuffer), pkt_get_length(videBuffer));
             				printf("WRITE = %d\n",w );
@@ -269,9 +270,14 @@ pkt_status_code read_write_loop(int sfd, int fd) {
             				}
 
 
+            				//reponse(node_get_data(current), renvoi, pkt_set_window(node_get_data(current), pkt_get_timestamp(node_get_data(current), seqnumDebut, seqnumFin, 0)))
+            				//renvoi = (node_get_data(current));
 
-            				renvoi = node_get_data(current);
+
             				if(node_get_data(node_get_next(current))==NULL){
+            					pkt_set_seqnum(renvoi, (pkt_get_seqnum(node_get_data(current))+1));
+            					pkt_set_window(renvoi, pkt_get_window(node_get_data(current)));
+            					pkt_set_timestamp(renvoi, pkt_get_timestamp(node_get_data(current)));
             					pkt_encode(renvoi, renvoiChar, &taille);
             					printf("le message est de type Ack et bon seqnum. Seqnum=%d\n", pkt_get_seqnum(renvoi));
 								if(write(sfd, renvoiChar, 12)!=12){
@@ -287,9 +293,10 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
             				printf("seqnum renvoi=%d\n", pkt_get_seqnum(renvoi));
             				node_set_data(current, NULL);
+            				pkt_del(videBuffer);
             				current = node_get_next(current);
             				runner = current;
-            				pkt_del(videBuffer);
+            				
 							tailleBuffer--;
 							printf("tailleBuffer-=%d\n",tailleBuffer );
 
@@ -310,8 +317,8 @@ pkt_status_code read_write_loop(int sfd, int fd) {
   	         			for(int i = 0; i<*decalage-1; i++){
   	         				runner = node_get_next(runner);
   	         			}
-  	         			printf("ajout dans le buffer sequnum = %d , decalage = %d, length du payload=%d\n", pkt_get_seqnum(renvoi), *decalage,pkt_get_length(renvoi));
-  	         			node_set_data(runner, renvoi); 
+  	         			printf("ajout dans le buffer sequnum = %d , decalage = %d, length du payload=%d\n", pkt_get_seqnum(recu), *decalage,pkt_get_length(recu));
+  	         			node_set_data(runner, recu); 
   	         			pkt_t* seqnumIncorrect=pkt_new();
   	         			pkt_set_seqnum(seqnumIncorrect,seqnumDebut);
   	         			pkt_set_type(seqnumIncorrect,PTYPE_ACK);      			
