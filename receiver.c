@@ -304,6 +304,7 @@ pkt_status_code read_write_loop(int sfd, int fd) {
 
 
             			}
+            			**current=*(node_get_next(*current));
             			pkt_del(renvoi);
 						pkt_del(recu);
 
